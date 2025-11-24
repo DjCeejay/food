@@ -236,7 +236,7 @@ function handleWhatsApp(form) {
   const time = formData.get("time");
   const note = formData.get("note");
 
-  let message = `New Order - Acie Fraiche Café%0A%0A`;
+  let message = `New Order - Acie Fraiche Cafe%0A%0A`;
   message += `Name: ${name}%0A`;
   message += `Phone: ${phone}%0A`;
   message += `Service: ${service}%0A`;
