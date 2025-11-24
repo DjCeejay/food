@@ -59,8 +59,8 @@
               <span>Signature bowls &amp; grills</span>
             </div>
             <div>
-              <strong>30 mins</strong>
-              <span>Avg. doorstep delivery</span>
+              <strong>15 mins</strong>
+              <span>Avg. pickup prep time</span>
             </div>
             <div>
               <strong>Trusted</strong>
@@ -81,7 +81,7 @@
           <div class="af-floating-note">
             <span>Open daily</span>
             <strong>6am – 9pm</strong>
-            <small>Dine-in · Takeout · Delivery</small>
+            <small>Dine-in · Takeout · Pickup</small>
           </div>
         </div>
       </div>
@@ -228,86 +228,11 @@
     </section>
 
     <section class="af-section" id="order">
-      <div class="af-container af-order-layout">
-        <div class="af-order-left">
-          <div class="af-section-head af-align-left">
-            <p class="af-kicker">Seamless checkout</p>
-            <h2>Your Order</h2>
-            <p>Review your selection and choose how you want to complete your order.</p>
-          </div>
-
-          <div class="af-order-steps">
-            <div class="af-step">
-              <span class="af-step-number">1</span>
-              <div>
-                <h4>Pick dishes</h4>
-                <p>Add signatures or mains to your cart.</p>
-              </div>
-            </div>
-            <div class="af-step">
-              <span class="af-step-number">2</span>
-              <div>
-                <h4>Confirm details</h4>
-                <p>Tell us where to serve you—home, office, or dine-in.</p>
-              </div>
-            </div>
-            <div class="af-step">
-              <span class="af-step-number">3</span>
-              <div>
-                <h4>Checkout</h4>
-                <p>Pay online or complete securely via WhatsApp.</p>
-              </div>
-            </div>
-          </div>
-
-          <ul id="cartList" class="af-cart-list"></ul>
-
-          <div class="af-cart-summary">
-            <span>Total</span>
-            <strong id="cartTotal">₦0</strong>
-          </div>
-        </div>
-
-        <div class="af-order-right">
-          <div class="af-order-card-head">
-            <h3>Customer Details</h3>
-            <p>We prepare immediately after confirmation.</p>
-          </div>
-          <form id="checkoutForm">
-            <label>
-              Full Name
-              <input type="text" name="name" required />
-            </label>
-
-            <label>
-              Phone Number
-              <input type="tel" name="phone" required />
-            </label>
-
-            <label>
-              Delivery Address
-              <textarea name="address" rows="3" required></textarea>
-            </label>
-
-            <label>
-              Order Note (optional)
-              <textarea name="note" rows="2"></textarea>
-            </label>
-
-            <h4>Choose Checkout Option</h4>
-            <div class="af-payment-options">
-              <button type="button" class="af-btn af-btn-primary" id="paystackBtn">
-                Pay with Card / Transfer (Paystack)
-              </button>
-              <button type="button" class="af-btn af-btn-ghost" id="whatsappBtn">
-                Complete Order via WhatsApp
-              </button>
-            </div>
-
-            <p class="af-helper-text">
-              A unique order number will be generated and shared with you after checkout.
-            </p>
-          </form>
+      <div class="af-container af-order-placeholder">
+        <div>
+          <p class="af-kicker">Checkout</p>
+          <h2>Open the cart to review and pay</h2>
+          <p>Tap the cart button to see your order summary and complete checkout in the overlay.</p>
         </div>
       </div>
     </section>
@@ -355,7 +280,7 @@
         <div class="af-contact-card">
           <p class="af-kicker">Visit Us</p>
           <h2>We would love to host you.</h2>
-          <p>Book a table, grab takeaway, or let us bring comfort to your door.</p>
+          <p>Book a table, grab takeaway, or call ahead and we'll have it ready for pickup.</p>
           <div class="af-contact-grid">
             <div>
               <strong>Phone</strong>
@@ -388,6 +313,88 @@
       </div>
     </section>
   </main>
+
+  <button class="af-cart-fab" id="cartFab" type="button" aria-label="View cart and checkout">
+    <span class="af-cart-fab-icon">Cart</span>
+    <span class="af-cart-fab-count" id="cartCount">0</span>
+  </button>
+
+  <div class="af-cart-overlay" id="cartOverlay" aria-hidden="true">
+    <div class="af-cart-overlay-backdrop" id="cartOverlayBackdrop"></div>
+    <div class="af-cart-overlay-card">
+      <button class="af-cart-overlay-close" id="cartOverlayClose" aria-label="Close cart overlay">
+        ×
+      </button>
+      <div class="af-cart-overlay-head">
+        <p class="af-kicker">Your Order</p>
+        <h3>Review and checkout</h3>
+        <p>Confirm your selection, service option, and preferred time.</p>
+      </div>
+
+      <div class="af-cart-overlay-body">
+        <div class="af-cart-overlay-list">
+          <ul id="cartListOverlay" class="af-cart-list"></ul>
+          <div class="af-cart-summary">
+            <span>Total</span>
+            <strong id="cartTotalOverlay">₦0</strong>
+          </div>
+        </div>
+        <div class="af-cart-overlay-form">
+          <form id="checkoutFormOverlay">
+            <label>
+              Full Name
+              <input type="text" name="name" required />
+            </label>
+
+            <label>
+              Phone Number
+              <input type="tel" name="phone" required />
+            </label>
+
+            <label>
+              Service Option
+              <select name="service" required>
+                <option value="Pickup">Pickup</option>
+                <option value="Takeout">Takeout</option>
+                <option value="Dine-in">Dine-in</option>
+              </select>
+            </label>
+
+            <label>
+              Preferred Time
+              <input type="text" name="time" placeholder="e.g., 6:30 PM" required />
+            </label>
+
+            <label>
+              Order Note (optional)
+              <textarea name="note" rows="2"></textarea>
+            </label>
+
+            <div class="af-payment-options">
+              <button
+                type="button"
+                class="af-btn af-btn-primary"
+                id="paystackBtnOverlay"
+                data-paystack-btn
+                data-form="checkoutFormOverlay"
+              >
+                Pay with Card / Transfer (Paystack)
+              </button>
+              <button
+                type="button"
+                class="af-btn af-btn-ghost"
+                id="whatsappBtnOverlay"
+                data-whatsapp-btn
+                data-form="checkoutFormOverlay"
+              >
+                Complete Order via WhatsApp
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <footer class="af-footer">
     <div class="af-container">
