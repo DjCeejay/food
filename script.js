@@ -255,7 +255,7 @@ function handleWhatsApp(form) {
   message += `%0ATotal: ₦${total.toLocaleString()}%0A`;
   message += `%0AOrder Source: Website`;
 
-  const whatsappNumber = "2349012345678"; // TODO: replace with real number
+  const whatsappNumber = "2347015862018"; // TODO: replace with real number
   const url = `https://wa.me/${whatsappNumber}?text=${message}`;
   window.open(url, "_blank");
 }
