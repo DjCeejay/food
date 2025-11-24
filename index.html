@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Acie Fraiche Café – Freshly Crafted, Simply Delicious</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="af-header">
+    <div class="af-container af-header-inner">
+      <div class="af-logo-wrap">
+        <img src="assets/logo.png" alt="Acie Fraiche Café Logo" class="af-logo" />
+        <div class="af-logo-text">
+          <span class="af-logo-name">Acie Fraiche Café</span>
+          <span class="af-logo-tagline">Freshly Crafted, Simply Delicious</span>
+        </div>
+      </div>
+
+      <nav class="af-nav">
+        <a href="#home">Home</a>
+        <a href="#featured">Signatures</a>
+        <a href="#menu">Menu</a>
+        <a href="#about">Story</a>
+        <a href="#contact">Visit</a>
+        <a href="#order" class="af-btn af-btn-outline">Order</a>
+      </nav>
+
+      <button class="af-nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        ☰
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="af-hero">
+      <div class="af-hero-gradient"></div>
+      <div class="af-container af-hero-inner">
+        <div class="af-hero-content">
+          <p class="af-kicker">Acie Fraiche Café</p>
+          <h1>Elevated fast-casual dining with West African flair.</h1>
+          <p class="af-lead">
+            Comfort classics, elegant plating, and the warmth of our hosts. Crafted fresh,
+            served swiftly, and priced for every day indulgence.
+          </p>
+          <div class="af-hero-actions">
+            <a href="#menu" class="af-btn af-btn-primary">View Menu</a>
+            <a href="#order" class="af-btn af-btn-ghost">Order Now</a>
+          </div>
+          <div class="af-hero-metrics">
+            <div>
+              <strong>20+</strong>
+              <span>Signature bowls &amp; grills</span>
+            </div>
+            <div>
+              <strong>30 mins</strong>
+              <span>Avg. doorstep delivery</span>
+            </div>
+            <div>
+              <strong>Trusted</strong>
+              <span>By families &amp; food lovers</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="af-hero-visual">
+          <div class="af-hero-card">
+            <img src="assets/hero.jpg" alt="Delicious meals from Acie Fraiche Café" />
+            <div class="af-hero-card-meta">
+              <span class="af-pill">Fresh &amp; hot</span>
+              <p>Chargrilled chicken, smoky jollof, seasonal greens.</p>
+              <span class="af-price">₦3,800</span>
+            </div>
+          </div>
+          <div class="af-floating-note">
+            <span>Open daily</span>
+            <strong>6am – 9pm</strong>
+            <small>Dine-in · Takeout · Delivery</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="af-section" id="featured">
+      <div class="af-container">
+        <div class="af-section-head">
+          <p class="af-kicker">Chef's Signatures</p>
+          <h2>Plates our guests keep coming back for.</h2>
+          <p>Modern takes on familiar comfort, layered with bold, memorable flavors.</p>
+        </div>
+
+        <div class="af-grid af-grid-3 af-cards">
+          <article class="af-card">
+            <img src="assets/meal-1.jpg" alt="Jollof Rice Special" class="af-card-img" />
+            <div class="af-card-body">
+              <div class="af-card-top">
+                <h3>Jollof Rice Special</h3>
+                <span class="af-tag">House Favorite</span>
+              </div>
+              <p>Smoky peppers, butter-soft chicken, charred vegetables, gold-dusted plantain.</p>
+              <div class="af-card-footer">
+                <span class="af-price">₦3,500</span>
+                <button class="af-btn af-btn-sm af-btn-primary" data-item="Jollof Rice Special">
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article class="af-card">
+            <img src="assets/meal-2.jpg" alt="Grilled Chicken Bowl" class="af-card-img" />
+            <div class="af-card-body">
+              <div class="af-card-top">
+                <h3>Grilled Chicken Bowl</h3>
+                <span class="af-tag">Protein Packed</span>
+              </div>
+              <p>Crisp vegetables, herb basmati, roasted peppers, and a rich tamarind glaze.</p>
+              <div class="af-card-footer">
+                <span class="af-price">₦4,200</span>
+                <button class="af-btn af-btn-sm af-btn-primary" data-item="Grilled Chicken Bowl">
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article class="af-card">
+            <img src="assets/meal-3.jpg" alt="Fraiche Salad Mix" class="af-card-img" />
+            <div class="af-card-body">
+              <div class="af-card-top">
+                <h3>Fraiche Salad Mix</h3>
+                <span class="af-tag">Light &amp; Bright</span>
+              </div>
+              <p>Seasonal greens, citrus, crunchy seeds, and a silky house dressing.</p>
+              <div class="af-card-footer">
+                <span class="af-price">₦3,000</span>
+                <button class="af-btn af-btn-sm af-btn-primary" data-item="Fraiche Salad Mix">
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="af-section af-section-alt" id="menu">
+      <div class="af-container">
+        <div class="af-section-head">
+          <p class="af-kicker">All-Day Menu</p>
+          <h2>Freshly prepared, beautifully plated.</h2>
+          <p>Choose your craving; we will prepare it hot and have it ready in minutes.</p>
+        </div>
+
+        <div class="af-menu-panel">
+          <div class="af-menu-filters">
+            <button class="af-chip af-chip-active" data-filter="all">All</button>
+            <button class="af-chip" data-filter="mains">Mains</button>
+            <button class="af-chip" data-filter="sides">Sides</button>
+            <button class="af-chip" data-filter="drinks">Drinks</button>
+          </div>
+
+          <div class="af-grid af-grid-3" id="menuGrid">
+            <article class="af-menu-item" data-category="mains">
+              <div class="af-menu-head">
+                <h3>Spicy Fried Rice</h3>
+                <span class="af-pill">Chef's pick</span>
+              </div>
+              <p>Served with crispy chicken, roasted veggies, and smoky pepper sauce.</p>
+              <div class="af-menu-footer">
+                <span class="af-price">₦3,800</span>
+                <button class="af-btn af-btn-sm af-btn-outline" data-item="Spicy Fried Rice">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+
+            <article class="af-menu-item" data-category="mains">
+              <div class="af-menu-head">
+                <h3>Grilled Fish Platter</h3>
+                <span class="af-pill">Charcoal</span>
+              </div>
+              <p>Charred with herbs, paired with sautéed greens, lemon butter, and yam chips.</p>
+              <div class="af-menu-footer">
+                <span class="af-price">₦5,000</span>
+                <button class="af-btn af-btn-sm af-btn-outline" data-item="Grilled Fish Platter">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+
+            <article class="af-menu-item" data-category="sides">
+              <div class="af-menu-head">
+                <h3>Plantain Slices</h3>
+                <span class="af-pill">Sweet</span>
+              </div>
+              <p>Golden, caramelized edges with a dusting of sea salt and suya spice.</p>
+              <div class="af-menu-footer">
+                <span class="af-price">₦1,500</span>
+                <button class="af-btn af-btn-sm af-btn-outline" data-item="Plantain Slices">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+
+            <article class="af-menu-item" data-category="drinks">
+              <div class="af-menu-head">
+                <h3>Fresh Chapman</h3>
+                <span class="af-pill">Mocktail</span>
+              </div>
+              <p>Citrusy, refreshing, finished with bitters and fresh fruit.</p>
+              <div class="af-menu-footer">
+                <span class="af-price">₦1,800</span>
+                <button class="af-btn af-btn-sm af-btn-outline" data-item="Fresh Chapman">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="af-section" id="order">
+      <div class="af-container af-order-layout">
+        <div class="af-order-left">
+          <div class="af-section-head af-align-left">
+            <p class="af-kicker">Seamless checkout</p>
+            <h2>Your Order</h2>
+            <p>Review your selection and choose how you want to complete your order.</p>
+          </div>
+
+          <div class="af-order-steps">
+            <div class="af-step">
+              <span class="af-step-number">1</span>
+              <div>
+                <h4>Pick dishes</h4>
+                <p>Add signatures or mains to your cart.</p>
+              </div>
+            </div>
+            <div class="af-step">
+              <span class="af-step-number">2</span>
+              <div>
+                <h4>Confirm details</h4>
+                <p>Tell us where to serve you—home, office, or dine-in.</p>
+              </div>
+            </div>
+            <div class="af-step">
+              <span class="af-step-number">3</span>
+              <div>
+                <h4>Checkout</h4>
+                <p>Pay online or complete securely via WhatsApp.</p>
+              </div>
+            </div>
+          </div>
+
+          <ul id="cartList" class="af-cart-list"></ul>
+
+          <div class="af-cart-summary">
+            <span>Total</span>
+            <strong id="cartTotal">₦0</strong>
+          </div>
+        </div>
+
+        <div class="af-order-right">
+          <div class="af-order-card-head">
+            <h3>Customer Details</h3>
+            <p>We prepare immediately after confirmation.</p>
+          </div>
+          <form id="checkoutForm">
+            <label>
+              Full Name
+              <input type="text" name="name" required />
+            </label>
+
+            <label>
+              Phone Number
+              <input type="tel" name="phone" required />
+            </label>
+
+            <label>
+              Delivery Address
+              <textarea name="address" rows="3" required></textarea>
+            </label>
+
+            <label>
+              Order Note (optional)
+              <textarea name="note" rows="2"></textarea>
+            </label>
+
+            <h4>Choose Checkout Option</h4>
+            <div class="af-payment-options">
+              <button type="button" class="af-btn af-btn-primary" id="paystackBtn">
+                Pay with Card / Transfer (Paystack)
+              </button>
+              <button type="button" class="af-btn af-btn-ghost" id="whatsappBtn">
+                Complete Order via WhatsApp
+              </button>
+            </div>
+
+            <p class="af-helper-text">
+              A unique order number will be generated and shared with you after checkout.
+            </p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="af-section af-section-alt" id="about">
+      <div class="af-container af-about">
+        <div class="af-about-copy">
+          <p class="af-kicker">Our Story</p>
+          <h2>Fast, thoughtful, and proudly Nigerian.</h2>
+          <p>
+            We set out to redefine fast food with seasonal ingredients, honest flavors, and a
+            service culture rooted in hospitality. Every plate is crafted to be beautiful, balanced,
+            and memorable.
+          </p>
+          <div class="af-stats">
+            <div>
+              <strong>15+</strong>
+              <span>team members from top kitchens</span>
+            </div>
+            <div>
+              <strong>Fresh</strong>
+              <span>Produce delivered daily</span>
+            </div>
+            <div>
+              <strong>Community</strong>
+              <span>We give back every month</span>
+            </div>
+          </div>
+        </div>
+        <div class="af-values">
+          <h3>Our House Rules</h3>
+          <ul class="af-list">
+            <li>Quality &amp; freshness in every meal.</li>
+            <li>Affordable pricing without compromise.</li>
+            <li>Speed with care — fast but thoughtful.</li>
+            <li>Community, warmth, and hospitality.</li>
+            <li>Integrity and consistency in service.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="af-section" id="contact">
+      <div class="af-container af-contact">
+        <div class="af-contact-card">
+          <p class="af-kicker">Visit Us</p>
+          <h2>We would love to host you.</h2>
+          <p>Book a table, grab takeaway, or let us bring comfort to your door.</p>
+          <div class="af-contact-grid">
+            <div>
+              <strong>Phone</strong>
+              <p>0800-000-0000</p>
+            </div>
+            <div>
+              <strong>Email</strong>
+              <p>hello@aciefraichecafe.com</p>
+            </div>
+            <div>
+              <strong>Address</strong>
+              <p>(Update with real café address)</p>
+            </div>
+            <div>
+              <strong>Hours</strong>
+              <p>Mon – Sun: 6am – 9pm</p>
+            </div>
+          </div>
+        </div>
+        <div class="af-contact-cta">
+          <h3>Stay Connected</h3>
+          <p>Follow us for chef drops, new pairings, and weekly tastings.</p>
+          <p class="af-socials">
+            <a href="#">Instagram</a> ·
+            <a href="#">Facebook</a> ·
+            <a href="#">X (Twitter)</a>
+          </p>
+          <a href="#order" class="af-btn af-btn-primary">Order Your Favorites</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="af-footer">
+    <div class="af-container">
+      <span>© <span id="year"></span> Acie Fraiche Café. Freshly Crafted, Simply Delicious.</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
