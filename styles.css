@@ -225,6 +225,19 @@ a {
   color: var(--af-ink);
 }
 
+.af-nav .af-btn-outline {
+  background: linear-gradient(135deg, #fbe7b2, var(--af-gold));
+  border-color: #e2b75a;
+  color: var(--af-ink);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+  padding: 0.65rem 1.5rem;
+}
+
+.af-nav .af-btn-outline:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+}
+
 .af-btn-ghost {
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -311,6 +324,16 @@ a {
   display: grid;
   gap: 1rem;
   justify-items: end;
+}
+
+.af-hero-logo {
+  width: 100%;
+  max-width: 620px;
+  height: 360px;
+  object-fit: contain;
+  transform: translateY(-36px);
+  margin-bottom: 0.7rem;
+  display: block;
 }
 
 .af-hero-card {
@@ -1202,6 +1225,12 @@ body.af-modal-open {
 }
 
 @media (max-width: 520px) {
+  .af-hero-logo {
+    height: 260px;
+    max-width: 460px;
+    transform: translateY(-22px);
+  }
+
   .af-hero-card img {
     height: 240px;
   }
