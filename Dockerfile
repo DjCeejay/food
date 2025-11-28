@@ -31,6 +31,7 @@ RUN mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache \
 
 # Env for build
 ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV APP_BASE_PATH=/app/backend
 ENV APP_ENV=production
 ENV APP_KEY=base64:placeholderbuildkey000000000000000000000000000000000000000
 
