@@ -14,26 +14,22 @@ Route::get('/script.js', function () {
     return response()->file(public_path('script.js'), ['Content-Type' => 'application/javascript']);
 });
 
-Route::get('/{path}', function ($path) {
-    $publicPath = public_path($path);
+Route::get('/assets/{file}', function ($file) {
+    $publicPath = public_path('assets/' . $file);
     if (file_exists($publicPath) && is_file($publicPath)) {
         $mimeTypes = [
-            'css' => 'text/css',
-            'js' => 'application/javascript',
             'jpg' => 'image/jpeg',
             'jpeg' => 'image/jpeg',
             'png' => 'image/png',
             'gif' => 'image/gif',
             'svg' => 'image/svg+xml',
-            'woff' => 'font/woff',
-            'woff2' => 'font/woff2',
         ];
-        $ext = pathinfo($path, PATHINFO_EXTENSION);
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
         $mimeType = $mimeTypes[$ext] ?? 'application/octet-stream';
         return response()->file($publicPath, ['Content-Type' => $mimeType]);
     }
     return abort(404);
-})->where('path', '.*');
+})->where('file', '.*');
 
 Route::get('/', function () {
     $categories = Category::orderBy('sort_order')->orderBy('name')->get();
