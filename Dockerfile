@@ -25,6 +25,10 @@ WORKDIR /app/backend
 # Copy app code
 COPY backend /app/backend
 
+# Ensure storage/bootstrap cache directories exist and are writable
+RUN mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache \
+ && chmod -R 777 storage bootstrap/cache
+
 # Env for build
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV APP_ENV=production
