@@ -22,7 +22,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 WORKDIR /app/backend
 
-# Copy app code
+# Copy app code (including views)
 COPY backend /app/backend
 
 # Ensure storage/bootstrap cache directories exist and are writable
@@ -47,4 +47,4 @@ RUN npm run build \
 
 ENV PORT=8000
 EXPOSE 8000
-CMD ["sh", "-c", "mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache && chmod -R 777 storage bootstrap/cache && php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache resources/views && chmod -R 777 storage bootstrap/cache resources/views && php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
