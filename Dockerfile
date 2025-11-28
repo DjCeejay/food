@@ -34,6 +34,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV APP_BASE_PATH=/app/backend
 ENV APP_ENV=production
 ENV APP_KEY=base64:placeholderbuildkey000000000000000000000000000000000000000
+ENV APP_URL=https://afc.com.ng
 
 # Install PHP deps
 RUN composer install --no-dev --prefer-dist --no-progress --no-interaction
