@@ -20,7 +20,7 @@
   <header class="af-header">
     <div class="af-container af-header-inner">
       <div class="af-logo-wrap">
-        <img src="assets/logo.png" alt="Acie Fraiche Cafe Logo" class="af-logo" />
+        <img src="{{ asset('assets/logo.png') }}" alt="Acie Fraiche Cafe Logo" class="af-logo" />
         <div class="af-logo-text">
           <span class="af-logo-name">Acie Fraiche Cafe</span>
           <span class="af-logo-tagline">Freshly Crafted, Simply Delicious</span>
@@ -74,7 +74,7 @@
         </div>
 
         <div class="af-hero-visual">
-          <img src="assets/logo2.png" alt="Acie Fraiche Cafe Emblem" class="af-hero-logo" />
+          <img src="{{ asset('assets/logo2.png') }}" alt="Acie Fraiche Cafe Emblem" class="af-hero-logo" />
           <div class="af-floating-note">
             <span>Opening hours</span>
             <strong>Mon–Sat 6am – 9pm</strong>
