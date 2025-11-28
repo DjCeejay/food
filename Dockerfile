@@ -39,10 +39,8 @@ RUN npm ci --no-progress
 # Build assets and cache config/routes; ensure storage link
 RUN npm run build \
  && php -r "if (is_link('public/storage')) { unlink('public/storage'); }" \
- && php artisan storage:link \
- && php artisan config:cache \
- && php artisan route:cache
+ && php artisan storage:link
 
 ENV PORT=8000
 EXPOSE 8000
-CMD ["sh", "-c", "php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "php artisan config:clear && php artisan route:clear && php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
