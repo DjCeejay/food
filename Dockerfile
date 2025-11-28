@@ -48,4 +48,4 @@ RUN npm run build \
 
 ENV PORT=8000
 EXPOSE 8000
-CMD ["sh", "-c", "mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache resources/views && chmod -R 777 storage bootstrap/cache resources/views && php artisan config:cache && php artisan route:cache && php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache resources/views && chmod -R 777 storage bootstrap/cache resources && php artisan config:cache && php artisan route:cache && php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
