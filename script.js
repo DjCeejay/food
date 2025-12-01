@@ -20,6 +20,9 @@ const cartFab = document.getElementById("cartFab");
 const cartOverlay = document.getElementById("cartOverlay");
 const cartOverlayClose = document.getElementById("cartOverlayClose");
 const cartOverlayBackdrop = document.getElementById("cartOverlayBackdrop");
+const featuredGrid = document.getElementById("featuredGrid");
+const menuGrid = document.getElementById("menuGrid");
+const menuFilters = document.getElementById("menuFilters");
 
 if (cartFab) {
   cartFab.addEventListener("click", () => {
@@ -60,6 +63,10 @@ function updateCartCount() {
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
   cartCountEl.textContent = count;
   bumpCartFab();
+}
+
+function getCartTotal() {
+  return cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 }
 
 function flyToCart(sourceEl) {
@@ -110,10 +117,7 @@ function renderCart() {
     }
   ];
 
-  let total = 0;
-  cart.forEach((item) => {
-    total += item.price * item.qty;
-  });
+  const total = getCartTotal();
 
   contexts.forEach(({ list, totalEl }) => {
     if (!list || !totalEl) return;
@@ -143,29 +147,45 @@ function renderCart() {
   updateCartCount();
 }
 
-function addToCart(name, price) {
+function addToCart(item) {
+  if (!item?.id) {
+    alert("Missing menu item ID; please refresh and try again.");
+    return;
+  }
+  const name = item.name;
   const existing = cart.find((i) => i.name === name);
   if (existing) {
     existing.qty += 1;
   } else {
-    cart.push({ name, price, qty: 1 });
+    cart.push({ id: item.id, name, price: item.price || 0, qty: 1 });
   }
   renderCart();
 }
 
-// Attach to "Add to Cart" buttons
-document.querySelectorAll("[data-item]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const name = btn.getAttribute("data-item");
-    // TODO: Get real price from dataset or DB; using placeholder for now
-    const priceEl = btn.closest("article")?.querySelector(".af-price");
-    const price = priceEl
-      ? parseInt(priceEl.textContent.replace(/[^\d]/g, ""), 10)
-      : 0;
-    addToCart(name, price);
-    flyToCart(btn);
+function bindAddToCartButtons() {
+  document.querySelectorAll("[data-item]").forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      const name = btn.getAttribute("data-item");
+      const id = parseInt(btn.getAttribute("data-item-id"), 10);
+      const soldOut = btn.getAttribute("data-sold-out") === "1";
+      if (soldOut) {
+        alert("Sorry, this item is sold out.");
+        return;
+      }
+      const priceEl = btn.closest("article")?.querySelector(".af-price");
+      const priceAttr = btn.getAttribute("data-item-price");
+      const price = priceAttr
+        ? parseFloat(priceAttr)
+        : priceEl
+          ? parseInt(priceEl.textContent.replace(/[^\d]/g, ""), 10)
+          : 0;
+      addToCart({ id, name, price: isNaN(price) ? 0 : price });
+      flyToCart(btn);
+    });
   });
-});
+}
 
 // Cart quantity buttons
 ["cartList", "cartListOverlay"].forEach((listId) => {
@@ -191,31 +211,274 @@ document.querySelectorAll("[data-item]").forEach((btn) => {
 // Initialize displayed count
 updateCartCount();
 
-// Menu filters
-document.querySelectorAll(".af-chip").forEach((chip) => {
-  chip.addEventListener("click", () => {
-    const filter = chip.getAttribute("data-filter");
-    document
-      .querySelectorAll(".af-chip")
-      .forEach((c) => c.classList.remove("af-chip-active"));
-    chip.classList.add("af-chip-active");
+// Dynamic menu loading
+const slugify = (text) =>
+  (text || "menu")
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "menu";
 
-    document.querySelectorAll(".af-menu-item").forEach((item) => {
-      const category = item.getAttribute("data-category");
-      item.style.display =
-        filter === "all" || filter === category ? "block" : "none";
+let activeFilter = "all";
+
+function renderFilters(categories) {
+  if (!menuFilters) return;
+  const chips = [
+    { slug: "all", name: "All", active: true },
+    ...categories.map((c) => ({
+      slug: slugify(c.name),
+      name: c.name,
+      active: false
+    }))
+  ];
+
+  menuFilters.innerHTML = chips
+    .map(
+      (chip) => `
+        <button class="af-chip ${chip.active ? "af-chip-active" : ""}" data-filter="${chip.slug}">
+          ${chip.name}
+        </button>
+      `
+    )
+    .join("");
+
+  menuFilters.querySelectorAll(".af-chip").forEach((chipBtn) => {
+    chipBtn.addEventListener("click", () => {
+      activeFilter = chipBtn.getAttribute("data-filter") || "all";
+      menuFilters
+        .querySelectorAll(".af-chip")
+        .forEach((c) => c.classList.remove("af-chip-active"));
+      chipBtn.classList.add("af-chip-active");
+      applyFilter();
     });
   });
-});
+}
 
-// Checkout buttons (stubs)
+function renderFeatured(items) {
+  if (!featuredGrid) return;
+  if (!items.length) {
+    featuredGrid.innerHTML =
+      '<p style="grid-column:1/-1;text-align:center;">Featured items coming soon.</p>';
+    return;
+  }
 
-function handlePaystack(form) {
+  const topThree = items.slice(0, 3);
+  featuredGrid.innerHTML = topThree
+    .map((item) => {
+      const catName = item.category?.name || "Signature";
+      return `
+        <article class="af-card" data-category="${slugify(catName)}">
+          <img src="${item.image_url || "assets/meal-1.jpg"}" alt="${item.name}" class="af-card-img" />
+          <div class="af-card-body">
+            <div class="af-card-top">
+              <h3>${item.name}</h3>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span class="af-tag">${catName}</span>
+                ${
+                  item.is_sold_out
+                    ? '<span class="af-pill" style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;">Sold Out</span>'
+                    : ""
+                }
+              </div>
+            </div>
+            <p>${item.description || "Fresh from our kitchen."}</p>
+            <div class="af-card-footer">
+              <span class="af-price">₦${Number(item.price).toLocaleString()}</span>
+              <button
+                class="af-btn af-btn-sm af-btn-primary"
+                data-item="${item.name}"
+                data-item-id="${item.id}"
+                data-item-price="${item.price}"
+                data-sold-out="${item.is_sold_out ? "1" : "0"}"
+                ${item.is_sold_out ? "disabled" : ""}
+              >
+                ${item.is_sold_out ? "Sold Out" : "Add to Cart"}
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  bindAddToCartButtons();
+}
+
+function renderMenu(items) {
+  if (!menuGrid) return;
+  if (!items.length) {
+    menuGrid.innerHTML =
+      '<p style="grid-column:1/-1;text-align:center;">Menu is coming soon. Please check back.</p>';
+    return;
+  }
+
+  menuGrid.innerHTML = items
+    .map((item) => {
+      const catName = item.category?.name || "Menu";
+      const catSlug = slugify(catName);
+      return `
+        <article class="af-menu-item" data-category="${catSlug}">
+          <div class="af-menu-head">
+            <h3>${item.name}</h3>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="af-pill">${catName}</span>
+              ${
+                item.is_sold_out
+                  ? '<span class="af-pill" style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;">Sold Out</span>'
+                  : ""
+              }
+            </div>
+          </div>
+          <p>${item.description || "Freshly prepared from our kitchen."}</p>
+          <div class="af-menu-footer">
+            <span class="af-price">₦${Number(item.price).toLocaleString()}</span>
+            <button
+              class="af-btn af-btn-sm af-btn-outline"
+              data-item="${item.name}"
+              data-item-id="${item.id}"
+              data-item-price="${item.price}"
+              data-sold-out="${item.is_sold_out ? "1" : "0"}"
+              ${item.is_sold_out ? "disabled" : ""}
+            >
+              ${item.is_sold_out ? "Sold Out" : "Add to Cart"}
+            </button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  bindAddToCartButtons();
+  applyFilter();
+}
+
+function applyFilter() {
+  if (!menuGrid) return;
+  menuGrid.querySelectorAll(".af-menu-item").forEach((item) => {
+    const category = item.getAttribute("data-category");
+    item.style.display =
+      activeFilter === "all" || category === activeFilter ? "block" : "none";
+  });
+}
+
+async function loadMenuData() {
+  if (!menuGrid && !featuredGrid && !menuFilters) return;
+  try {
+    const [itemsRes, categoriesRes] = await Promise.all([
+      fetch("/api/menu-items?active_only=1"),
+      fetch("/api/categories?active_only=1")
+    ]);
+
+    if (!itemsRes.ok || !categoriesRes.ok) {
+      throw new Error("Could not load menu data.");
+    }
+
+    const [items, categories] = await Promise.all([
+      itemsRes.json(),
+      categoriesRes.json()
+    ]);
+
+    renderFilters(categories || []);
+    renderMenu(items || []);
+    renderFeatured(items || []);
+  } catch (err) {
+    if (featuredGrid) {
+      featuredGrid.innerHTML =
+        '<p style="grid-column:1/-1;text-align:center;">Unable to load menu right now.</p>';
+    }
+    if (menuGrid) {
+      menuGrid.innerHTML =
+        '<p style="grid-column:1/-1;text-align:center;">Unable to load menu right now.</p>';
+    }
+    console.error(err);
+  }
+}
+
+// Checkout buttons
+
+async function handlePaystack(form, triggerBtn) {
   if (!cart.length) {
     alert("Your cart is empty.");
     return;
   }
-  alert("Paystack integration will go here.");
+  if (!form) {
+    alert("Please fill your details first.");
+    return;
+  }
+
+  const formData = new FormData(form);
+  const name = formData.get("name");
+  const phone = formData.get("phone");
+
+  const payload = {
+    channel: "web",
+    customer_name: name,
+    customer_phone: phone,
+    items: cart.map((item) => ({
+      menu_item_id: item.id,
+      quantity: item.qty,
+      price: item.price
+    })),
+    payment: {
+      amount: getCartTotal(),
+      method: "web-paystack",
+      reference: `WEB-${Date.now()}`
+    }
+  };
+
+  if (payload.items.some((i) => !i.menu_item_id)) {
+    alert("Missing menu item IDs; please refresh the page.");
+    return;
+  }
+
+  const resetBtnState = () => {
+    if (!triggerBtn) return;
+    triggerBtn.removeAttribute("aria-busy");
+    triggerBtn.removeAttribute("disabled");
+    triggerBtn.textContent = "Pay with Card / Transfer (Paystack)";
+  };
+
+  if (triggerBtn) {
+    triggerBtn.setAttribute("aria-busy", "true");
+    triggerBtn.setAttribute("disabled", "disabled");
+    triggerBtn.textContent = "Placing order...";
+  }
+
+  try {
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      let message = "Could not place your order. Please try again.";
+      try {
+        const error = await res.json();
+        if (error?.message) message = error.message;
+        if (error?.errors?.items?.[0]) message = error.errors.items[0];
+      } catch (err) {
+        // ignore JSON parse issues
+      }
+      throw new Error(message);
+    }
+
+    const order = await res.json();
+    alert(
+      `Order placed! Your code is ${order.code || "pending"}. We will confirm shortly.`
+    );
+    cart = [];
+    renderCart();
+    form.reset();
+    closeCartOverlay();
+  } catch (err) {
+    alert(err.message || "Something went wrong while placing your order.");
+  } finally {
+    resetBtnState();
+  }
 }
 
 function handleWhatsApp(form) {
@@ -244,15 +507,11 @@ function handleWhatsApp(form) {
   if (note) message += `Note: ${note}%0A`;
   message += `%0AItems:%0A`;
 
-  let total = 0;
   cart.forEach((item) => {
-    total += item.price * item.qty;
-    message += `- ${item.name} (₦${item.price.toLocaleString()} × ${
-      item.qty
-    })%0A`;
+    message += `- ${item.name} (₦${item.price.toLocaleString()} × ${item.qty})%0A`;
   });
 
-  message += `%0ATotal: ₦${total.toLocaleString()}%0A`;
+  message += `%0ATotal: ₦${getCartTotal().toLocaleString()}%0A`;
   message += `%0AOrder Source: Website`;
 
   const whatsappNumber = "2347015862018"; // TODO: replace with real number
@@ -260,12 +519,15 @@ function handleWhatsApp(form) {
   window.open(url, "_blank");
 }
 
+// Kick off dynamic menu load
+loadMenuData();
+
 // Attach checkout handlers for all buttons
 document.querySelectorAll("[data-paystack-btn]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const formId = btn.getAttribute("data-form");
     const form = formId ? document.getElementById(formId) : null;
-    handlePaystack(form);
+    handlePaystack(form, btn);
   });
 });
 

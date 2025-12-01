@@ -95,18 +95,31 @@
         <div class="af-grid af-grid-3 af-cards">
           @php $fallbackImage = asset('assets/meal-1.jpg'); @endphp
           @forelse ($featured as $item)
+            @php $isSoldOut = $item->is_sold_out; @endphp
             <article class="af-card" data-category="{{ Str::slug(optional($item->category)->name ?? 'menu') }}">
               <img src="{{ $item->image_url ?: $fallbackImage }}" alt="{{ $item->name }}" class="af-card-img" />
               <div class="af-card-body">
                 <div class="af-card-top">
                   <h3>{{ $item->name }}</h3>
-                  <span class="af-tag">{{ optional($item->category)->name ?? 'Signature' }}</span>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <span class="af-tag">{{ optional($item->category)->name ?? 'Signature' }}</span>
+                    @if ($isSoldOut)
+                      <span class="af-pill" style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;">Sold Out</span>
+                    @endif
+                  </div>
                 </div>
                 <p>{{ $item->description ?? 'Fresh from our kitchen.' }}</p>
                 <div class="af-card-footer">
                   <span class="af-price">₦{{ number_format($item->price, 0) }}</span>
-                  <button class="af-btn af-btn-sm af-btn-primary" data-item="{{ $item->name }}">
-                    Add to Cart
+                  <button
+                    class="af-btn af-btn-sm af-btn-primary"
+                    data-item="{{ $item->name }}"
+                    data-item-id="{{ $item->id }}"
+                    data-item-price="{{ $item->price }}"
+                    data-sold-out="{{ $isSoldOut ? '1' : '0' }}"
+                    @if($isSoldOut) disabled @endif
+                  >
+                    {{ $isSoldOut ? 'Sold Out' : 'Add to Cart' }}
                   </button>
                 </div>
               </div>
@@ -136,17 +149,32 @@
 
           <div class="af-grid af-grid-3" id="menuGrid">
             @forelse ($menuItems as $item)
-              @php $catSlug = Str::slug(optional($item->category)->name ?? 'menu'); @endphp
+              @php
+                  $catSlug = Str::slug(optional($item->category)->name ?? 'menu');
+                  $isSoldOut = $item->is_sold_out;
+              @endphp
               <article class="af-menu-item" data-category="{{ $catSlug }}">
                 <div class="af-menu-head">
                   <h3>{{ $item->name }}</h3>
-                  <span class="af-pill">{{ optional($item->category)->name ?? 'Menu' }}</span>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <span class="af-pill">{{ optional($item->category)->name ?? 'Menu' }}</span>
+                    @if ($isSoldOut)
+                      <span class="af-pill" style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;">Sold Out</span>
+                    @endif
+                  </div>
                 </div>
                 <p>{{ $item->description ?? 'Freshly prepared from our kitchen.' }}</p>
                 <div class="af-menu-footer">
                   <span class="af-price">₦{{ number_format($item->price, 0) }}</span>
-                  <button class="af-btn af-btn-sm af-btn-outline" data-item="{{ $item->name }}">
-                    Add to Cart
+                  <button
+                    class="af-btn af-btn-sm af-btn-outline"
+                    data-item="{{ $item->name }}"
+                    data-item-id="{{ $item->id }}"
+                    data-item-price="{{ $item->price }}"
+                    data-sold-out="{{ $isSoldOut ? '1' : '0' }}"
+                    @if($isSoldOut) disabled @endif
+                  >
+                    {{ $isSoldOut ? 'Sold Out' : 'Add to Cart' }}
                   </button>
                 </div>
               </article>

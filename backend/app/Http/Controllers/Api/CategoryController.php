@@ -8,9 +8,15 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Category::orderBy('sort_order')->orderBy('name')->get();
+        $query = Category::orderBy('sort_order')->orderBy('name');
+
+        if ($request->boolean('active_only', false)) {
+            $query->where('is_active', true);
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)
