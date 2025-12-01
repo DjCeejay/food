@@ -45,13 +45,13 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'active', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::view('/admin', 'admin')->name('admin');
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::view('/admin', 'admin')->middleware(['active', 'role:admin'])->name('admin');
+    Route::get('/profile', [ProfileController::class, 'edit'])->middleware('active')->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->middleware('active')->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->middleware('active')->name('profile.destroy');
 });
 
 require __DIR__.'/auth.php';

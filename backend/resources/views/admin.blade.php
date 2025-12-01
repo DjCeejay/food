@@ -154,6 +154,7 @@
             <button class="nav-btn active" data-tab="overview"><span class="nav-label">Overview</span></button>
             <button class="nav-btn" data-tab="categories"><span class="nav-label">Categories</span></button>
             <button class="nav-btn" data-tab="menu"><span class="nav-label">Menu</span></button>
+            <button class="nav-btn" data-tab="users"><span class="nav-label">Users</span></button>
             <button class="nav-btn" data-tab="orders"><span class="nav-label">Orders</span></button>
             <button class="nav-btn" data-tab="pos"><span class="nav-label">POS</span></button>
             <button class="nav-btn" data-tab="health"><span class="nav-label">Health</span></button>
@@ -240,6 +241,14 @@
                 </div>
             </section>
 
+            <section class="panel" data-section="users">
+                <div class="card">
+                    <h2>Users</h2>
+                    <p class="muted">Approve accounts and assign roles.</p>
+                    <div class="list" id="usersList"></div>
+                </div>
+            </section>
+
             <section class="panel" data-section="orders">
                 <div class="card">
                     <h2>Orders</h2>
@@ -300,12 +309,14 @@
         const menuList = document.getElementById('menuList');
         const menuForm = document.getElementById('menuForm');
         const menuCategorySelect = document.getElementById('menuCategorySelect');
+        const usersList = document.getElementById('usersList');
         const ordersTableBody = document.querySelector('#ordersTable tbody');
         const statCategories = document.getElementById('statCategories');
         const statItems = document.getElementById('statItems');
         const statOrders = document.getElementById('statOrders');
         const statRevenue = document.getElementById('statRevenue');
         const healthDetail = document.getElementById('healthDetail');
+        const roles = ['admin', 'staff', 'pos', 'kitchen', 'desk'];
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -431,6 +442,39 @@
             renderOrders(data);
         }
 
+        async function loadUsers() {
+            if (!usersList) return;
+            const res = await apiFetch('/api/users');
+            const data = await res.json();
+            renderUsers(data);
+        }
+
+        function renderUsers(users) {
+            if (!usersList) return;
+            usersList.innerHTML = users.map(u => `
+                <div class="item" style="align-items:flex-start;">
+                    <div>
+                        <h4>${u.name}</h4>
+                        <div class="muted">${u.email}</div>
+                        <div class="row" style="gap:6px;margin-top:6px;">
+                            <span class="pill" style="border-color:${u.is_active ? '#bbf7d0' : '#fca5a5'};color:${u.is_active ? '#166534' : '#b91c1c'}">
+                                ${u.is_active ? 'Active' : 'Pending'}
+                            </span>
+                            <span class="pill">Role: ${u.role || 'staff'}</span>
+                        </div>
+                    </div>
+                    <div class="row" style="gap:6px;">
+                        <select onchange="updateUserRole(${u.id}, this.value)" value="${u.role || 'staff'}">
+                            ${roles.map(r => `<option value="${r}" ${r === (u.role || 'staff') ? 'selected' : ''}>${r}</option>`).join('')}
+                        </select>
+                        <button class="btn-ghost" onclick="toggleUserActive(${u.id}, ${u.is_active ? 'false' : 'true'})">
+                            ${u.is_active ? 'Deactivate' : 'Approve'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         categoryForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = new FormData(categoryForm);
@@ -499,9 +543,27 @@
             await loadMenu();
         };
 
+        window.updateUserRole = async (id, role) => {
+            await apiFetch(`/api/users/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role }),
+            });
+            await loadUsers();
+        };
+
+        window.toggleUserActive = async (id, active) => {
+            await apiFetch(`/api/users/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_active: active }),
+            });
+            await loadUsers();
+        };
+
         async function init() {
             await checkHealth();
-            await Promise.all([loadCategories(), loadMenu(), loadOrders()]);
+            await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadUsers()]);
         }
 
         init();

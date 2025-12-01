@@ -83,6 +83,7 @@ class OrderController extends Controller
 
             $order = Order::create([
                 'channel' => $data['channel'] ?? 'pos',
+                'created_by' => $request->user()?->id,
                 'customer_name' => $data['customer_name'] ?? null,
                 'customer_phone' => $data['customer_phone'] ?? null,
                 'subtotal' => $subtotal,

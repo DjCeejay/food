@@ -44,4 +44,8 @@
             {{ __('Log in') }}
         </x-primary-button>
     </form>
+
+    <div style="margin-top:14px; color:rgba(0,0,0,0.65);">
+        New staff? <a style="color:#523700; font-weight:700;" href="{{ route('register') }}">Request access</a>
+    </div>
 </x-guest-layout>

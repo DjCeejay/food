@@ -23,6 +23,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_active',
+        'role',
+        'approved_by',
     ];
 
     /**
@@ -45,6 +48,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -53,5 +57,10 @@ class User extends Authenticatable
         return Attribute::make(
             set: fn ($value) => $value ?? 'User'
         );
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'created_by');
     }
 }

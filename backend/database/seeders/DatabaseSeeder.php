@@ -47,6 +47,9 @@ class DatabaseSeeder extends Seeder
                 [
                     'name' => $data['name'],
                     'password' => bcrypt($data['password']),
+                    'is_active' => true,
+                    'role' => $data['role'],
+                    'approved_by' => 1,
                 ]
             );
             $user->syncRoles($data['role']);

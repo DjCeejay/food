@@ -14,6 +14,7 @@ class Order extends Model
         'code',
         'status',
         'channel',
+        'created_by',
         'customer_name',
         'customer_phone',
         'subtotal',
@@ -50,5 +51,10 @@ class Order extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

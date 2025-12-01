@@ -1,4 +1,8 @@
 <x-guest-layout>
+    <div style="margin-bottom:14px;">
+        <h1>Request Staff Access</h1>
+        <p style="color:rgba(0,0,0,0.65); margin:4px 0 0;">Submit your details. An admin will approve and assign your role.</p>
+    </div>
     <form method="POST" action="{{ route('register') }}">
         @csrf
 

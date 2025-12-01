@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Role;
 
 class RegisteredUserController extends Controller
 {
@@ -39,12 +40,21 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'is_active' => false,
+            'role' => 'staff',
         ]);
+
+        // Ensure base roles exist
+        Role::firstOrCreate(['name' => 'admin']);
+        Role::firstOrCreate(['name' => 'staff']);
+        Role::firstOrCreate(['name' => 'pos']);
+        Role::firstOrCreate(['name' => 'kitchen']);
+        Role::firstOrCreate(['name' => 'desk']);
+        $user->syncRoles('staff');
 
         event(new Registered($user));
 
-        Auth::login($user);
-
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route('login', absolute: false))
+            ->with('status', 'Registration received. An admin will activate your account.');
     }
 }
