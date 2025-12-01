@@ -317,6 +317,14 @@
         const statRevenue = document.getElementById('statRevenue');
         const healthDetail = document.getElementById('healthDetail');
         const roles = ['admin', 'staff', 'pos', 'kitchen', 'desk'];
+        let isInteracting = false;
+        let interactionTimeout;
+
+        const markInteracting = () => {
+            isInteracting = true;
+            clearTimeout(interactionTimeout);
+            interactionTimeout = setTimeout(() => { isInteracting = false; }, 2000);
+        };
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -571,6 +579,18 @@
         async function init() {
             await checkHealth();
             await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadUsers()]);
+
+            // Live refresh every 8 seconds
+            const refresh = async () => {
+                if (isInteracting) return;
+                await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadUsers()]);
+            };
+            setInterval(refresh, 8000);
+
+            // Pause refresh while typing or focusing inputs
+            document.addEventListener('focusin', markInteracting);
+            document.addEventListener('input', markInteracting);
+            document.addEventListener('mousedown', markInteracting);
         }
 
         init();

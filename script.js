@@ -529,6 +529,9 @@ function handleWhatsApp(form) {
 loadMenuData();
 bindFilterButtons();
 
+// Periodic refresh to keep menu/categories live without reload
+setInterval(loadMenuData, 15000);
+
 // Attach checkout handlers for all buttons
 document.querySelectorAll("[data-paystack-btn]").forEach((btn) => {
   btn.addEventListener("click", () => {
