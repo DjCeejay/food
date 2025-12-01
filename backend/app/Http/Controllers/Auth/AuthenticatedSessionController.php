@@ -42,10 +42,10 @@ class AuthenticatedSessionController extends Controller
 
         if ($user->hasRole('admin')) {
             // Always push admins to the admin dashboard
-            return redirect()->route('admin', absolute: false);
+            return redirect()->route('admin');
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('dashboard'));
     }
 
     /**
