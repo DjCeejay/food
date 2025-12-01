@@ -358,6 +358,9 @@
                     <span class="pill" style="border-color:${cat.is_active ? '#bbf7d0' : '#fca5a5'};color:${cat.is_active ? '#166534' : '#b91c1c'}">
                         ${cat.is_active ? 'Active' : 'Inactive'}
                     </span>
+                    <div class="row" style="gap:6px;">
+                        <button class="btn-ghost" onclick="deleteCategory(${cat.id})">Delete</button>
+                    </div>
                 </div>
             `).join('');
 
@@ -381,7 +384,11 @@
                             </div>
                         </div>
                     </div>
-                    <button class="btn-ghost" onclick="toggleSoldOut(${item.id})">${item.is_sold_out ? 'Mark Available' : 'Mark Sold Out'}</button>
+                    <div class="row" style="gap:6px;">
+                        <button class="btn-ghost" onclick="toggleSoldOut(${item.id})">${item.is_sold_out ? 'Mark Available' : 'Mark Sold Out'}</button>
+                        <button class="btn-ghost" onclick="editMenuItem(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})">Edit</button>
+                        <button class="btn-ghost" onclick="deleteMenuItem(${item.id})">Delete</button>
+                    </div>
                 </div>
             `).join('');
             statItems.textContent = items.length;
@@ -453,6 +460,42 @@
 
         window.toggleSoldOut = async (id) => {
             await apiFetch(`/api/menu-items/${id}/toggle-sold-out`, { method: 'POST' });
+            await loadMenu();
+        };
+
+        window.deleteCategory = async (id) => {
+            if (!confirm('Delete this category? Items will remain uncategorized.')) return;
+            await apiFetch(`/api/categories/${id}`, { method: 'DELETE' });
+            await Promise.all([loadCategories(), loadMenu()]);
+        };
+
+        window.deleteMenuItem = async (id) => {
+            if (!confirm('Delete this menu item?')) return;
+            await apiFetch(`/api/menu-items/${id}`, { method: 'DELETE' });
+            await loadMenu();
+        };
+
+        window.editMenuItem = async (id, item) => {
+            const name = prompt('Name', item.name);
+            if (name === null || name.trim() === '') return;
+            const priceInput = prompt('Price (NGN)', item.price);
+            const price = Number(priceInput);
+            if (Number.isNaN(price)) {
+                alert('Invalid price');
+                return;
+            }
+            const description = prompt('Description', item.description || '') ?? '';
+            const category_id = prompt('Category ID (leave blank to unset)', item.category_id || '') || null;
+            await apiFetch(`/api/menu-items/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    price,
+                    description: description || null,
+                    category_id: category_id || null,
+                }),
+            });
             await loadMenu();
         };
 
