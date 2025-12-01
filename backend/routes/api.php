@@ -28,4 +28,5 @@ Route::middleware(['web', 'auth', 'active', 'role:admin'])->group(function () {
 
     Route::get('/users', [UserAdminController::class, 'index']);
     Route::put('/users/{user}', [UserAdminController::class, 'update']);
+    Route::delete('/users/{user}', [UserAdminController::class, 'destroy']);
 });

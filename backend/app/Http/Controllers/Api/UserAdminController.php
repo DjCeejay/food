@@ -51,4 +51,15 @@ class UserAdminController extends Controller
 
         return $user->load('roles');
     }
+
+    public function destroy(Request $request, User $user)
+    {
+        if ($request->user()->id === $user->id) {
+            return response()->json(['message' => 'You cannot delete your own account.'], 422);
+        }
+
+        $user->delete();
+
+        return response()->noContent();
+    }
 }

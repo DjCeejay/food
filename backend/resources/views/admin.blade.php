@@ -470,6 +470,7 @@
                         <button class="btn-ghost" onclick="toggleUserActive(${u.id}, ${u.is_active ? 'false' : 'true'})">
                             ${u.is_active ? 'Deactivate' : 'Approve'}
                         </button>
+                        <button class="btn-ghost" onclick="deleteUser(${u.id})">Delete</button>
                     </div>
                 </div>
             `).join('');
@@ -558,6 +559,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ is_active: active }),
             });
+            await loadUsers();
+        };
+
+        window.deleteUser = async (id) => {
+            if (!confirm('Delete this user account?')) return;
+            await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
             await loadUsers();
         };
 
