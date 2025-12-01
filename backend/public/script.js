@@ -221,6 +221,21 @@ const slugify = (text) =>
 
 let activeFilter = "all";
 
+function bindFilterButtons() {
+  const chips = menuFilters
+    ? menuFilters.querySelectorAll(".af-chip")
+    : document.querySelectorAll(".af-menu-filters .af-chip");
+
+  chips.forEach((chipBtn) => {
+    chipBtn.addEventListener("click", () => {
+      activeFilter = chipBtn.getAttribute("data-filter") || "all";
+      chips.forEach((c) => c.classList.remove("af-chip-active"));
+      chipBtn.classList.add("af-chip-active");
+      applyFilter();
+    });
+  });
+}
+
 function renderFilters(categories) {
   if (!menuFilters) return;
   const chips = [
@@ -242,16 +257,7 @@ function renderFilters(categories) {
     )
     .join("");
 
-  menuFilters.querySelectorAll(".af-chip").forEach((chipBtn) => {
-    chipBtn.addEventListener("click", () => {
-      activeFilter = chipBtn.getAttribute("data-filter") || "all";
-      menuFilters
-        .querySelectorAll(".af-chip")
-        .forEach((c) => c.classList.remove("af-chip-active"));
-      chipBtn.classList.add("af-chip-active");
-      applyFilter();
-    });
-  });
+  bindFilterButtons();
 }
 
 function renderFeatured(items) {
@@ -521,6 +527,7 @@ function handleWhatsApp(form) {
 
 // Kick off dynamic menu load
 loadMenuData();
+bindFilterButtons();
 
 // Attach checkout handlers for all buttons
 document.querySelectorAll("[data-paystack-btn]").forEach((btn) => {
