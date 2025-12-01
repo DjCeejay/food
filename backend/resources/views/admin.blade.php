@@ -306,6 +306,15 @@
         const statRevenue = document.getElementById('statRevenue');
         const healthDetail = document.getElementById('healthDetail');
 
+        const apiFetch = (url, options = {}) => {
+            const headers = options.headers || {};
+            return fetch(url, {
+                credentials: 'same-origin',
+                ...options,
+                headers,
+            });
+        };
+
         toggleSidebar?.addEventListener('click', () => {
             if (window.innerWidth <= 960) {
                 sidebar.classList.toggle('open');
@@ -324,7 +333,7 @@
 
         async function checkHealth() {
             try {
-                const res = await fetch('/api/health');
+                const res = await apiFetch('/api/health');
                 if (!res.ok) throw new Error('bad status');
                 healthDetail.textContent = 'API responding normally.';
             } catch (e) {
@@ -390,19 +399,19 @@
         }
 
         async function loadCategories() {
-            const res = await fetch('/api/categories');
+            const res = await apiFetch('/api/categories');
             const data = await res.json();
             renderCategories(data);
         }
 
         async function loadMenu() {
-            const res = await fetch('/api/menu-items');
+            const res = await apiFetch('/api/menu-items');
             const data = await res.json();
             renderMenu(data);
         }
 
         async function loadOrders() {
-            const res = await fetch('/api/orders');
+            const res = await apiFetch('/api/orders');
             const payload = await res.json();
             const data = payload.data || payload; // paginate or flat
             renderOrders(data);
@@ -411,7 +420,7 @@
         categoryForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = new FormData(categoryForm);
-            await fetch('/api/categories', {
+            await apiFetch('/api/categories', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -430,13 +439,13 @@
             if (form.get('image')?.size === 0) {
                 form.delete('image');
             }
-            await fetch('/api/menu-items', { method: 'POST', body: form });
+            await apiFetch('/api/menu-items', { method: 'POST', body: form });
             menuForm.reset();
             await Promise.all([loadMenu(), loadCategories()]);
         });
 
         window.toggleSoldOut = async (id) => {
-            await fetch(`/api/menu-items/${id}/toggle-sold-out`, { method: 'POST' });
+            await apiFetch(`/api/menu-items/${id}/toggle-sold-out`, { method: 'POST' });
             await loadMenu();
         };
 
