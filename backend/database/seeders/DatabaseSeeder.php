@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $users = [
-            ['name' => 'Admin', 'email' => 'admin@example.com', 'password' => 'password', 'role' => 'admin'],
+            ['name' => 'Admin', 'email' => 'admin@afc.com.ng', 'password' => 'Diode4me123@', 'role' => 'admin'],
             ['name' => 'Kitchen', 'email' => 'kitchen@example.com', 'password' => 'password', 'role' => 'kitchen'],
             ['name' => 'Staff', 'email' => 'staff@example.com', 'password' => 'password', 'role' => 'staff'],
             ['name' => 'Desk', 'email' => 'desk@example.com', 'password' => 'password', 'role' => 'desk'],
