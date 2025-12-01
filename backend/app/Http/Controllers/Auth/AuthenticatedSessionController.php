@@ -40,7 +40,11 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $target = $user->hasRole('admin')
+            ? route('admin', absolute: false)
+            : route('dashboard', absolute: false);
+
+        return redirect()->intended($target);
     }
 
     /**
