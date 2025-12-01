@@ -40,11 +40,12 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        $target = $user->hasRole('admin')
-            ? route('admin', absolute: false)
-            : route('dashboard', absolute: false);
+        if ($user->hasRole('admin')) {
+            // Always push admins to the admin dashboard
+            return redirect()->route('admin', absolute: false);
+        }
 
-        return redirect()->intended($target);
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
