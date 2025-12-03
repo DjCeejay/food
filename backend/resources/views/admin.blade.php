@@ -774,43 +774,78 @@
                 alert('This item does not have a barcode yet.');
                 return;
             }
+            const text = String(code);
             try {
                 if (navigator?.clipboard?.writeText) {
-                    await navigator.clipboard.writeText(code);
+                    await navigator.clipboard.writeText(text);
                     alert('Barcode copied to clipboard.');
-                } else {
-                    throw new Error('Clipboard unavailable');
+                    return;
                 }
-            } catch (e) {
-                alert(`Barcode: ${code}`);
+                throw new Error('Clipboard API unavailable');
+            } catch (err) {
+                try {
+                    const input = document.createElement('input');
+                    input.value = text;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    input.remove();
+                    alert('Barcode copied to clipboard.');
+                } catch (e) {
+                    alert(`Barcode: ${text}`);
+                }
             }
         };
 
-        window.printBarcode = (code, name = '') => {
+        let barcodeLibPromise = null;
+        const ensureBarcodeLib = () => {
+            if (typeof JsBarcode !== 'undefined') return Promise.resolve();
+            if (!barcodeLibPromise) {
+                barcodeLibPromise = new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error('Could not load barcode library.'));
+                    document.head.appendChild(script);
+                });
+            }
+            return barcodeLibPromise;
+        };
+
+        window.printBarcode = async (code, name = '') => {
             if (!code) {
                 alert('This item does not have a barcode yet.');
                 return;
             }
-            if (typeof JsBarcode === 'undefined') {
-                alert('Barcode generator not loaded. Please refresh and try again.');
+            try {
+                await ensureBarcodeLib();
+            } catch (e) {
+                alert('Barcode generator not loaded. Please check your connection and retry.');
                 return;
             }
-            const canvas = document.createElement('canvas');
-            const safeCode = String(code);
-            const safeName = String(name || 'Menu Item');
-            JsBarcode(canvas, safeCode, {
-                format: 'code128',
-                width: 2,
-                height: 80,
-                displayValue: true,
-                fontSize: 14,
-                margin: 10,
-            });
-            const link = document.createElement('a');
-            const slug = safeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'item';
-            link.download = `${slug}-${safeCode}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            try {
+                const canvas = document.createElement('canvas');
+                const safeCode = String(code);
+                const safeName = String(name || 'Menu Item');
+                JsBarcode(canvas, safeCode, {
+                    format: 'code128',
+                    width: 2,
+                    height: 80,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 10,
+                });
+                const link = document.createElement('a');
+                const slug = safeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'item';
+                link.download = `${slug}-${safeCode}.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            } catch (e) {
+                console.error(e);
+                alert('Could not generate barcode image. Please try again.');
+            }
         };
 
         window.regenBarcode = async (id, btn) => {
