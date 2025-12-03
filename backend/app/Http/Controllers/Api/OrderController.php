@@ -10,6 +10,7 @@ use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
@@ -157,5 +158,53 @@ class OrderController extends Controller
         });
 
         return response()->json(['message' => 'All orders cleared.']);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $range = $request->get('range', 'monthly');
+        $from = match ($range) {
+            'weekly' => Carbon::today()->subDays(6),
+            default => Carbon::today()->subDays(29),
+        };
+
+        $orders = Order::with(['items', 'payments', 'creator'])
+            ->whereDate('created_at', '>=', $from)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $filename = 'orders-' . $range . '-' . now()->format('Ymd_His') . '.csv';
+
+        return response()->streamDownload(function () use ($orders) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, [
+                'Code',
+                'Status',
+                'Total',
+                'Channel',
+                'Customer Name',
+                'Customer Phone',
+                'Seller',
+                'Items Count',
+                'Created At',
+            ]);
+
+            foreach ($orders as $order) {
+                fputcsv($out, [
+                    $order->code,
+                    $order->status,
+                    $order->total,
+                    $order->channel,
+                    $order->customer_name,
+                    $order->customer_phone,
+                    $order->creator->name ?? '',
+                    $order->items->count(),
+                    $order->created_at,
+                ]);
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
     }
 }

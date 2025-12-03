@@ -40,20 +40,20 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        if ($user->hasRole('admin')) {
-            // Always push admins to the admin dashboard
+        $role = $user->role ?? '';
+        if ($user->hasRole('admin') || $role === 'admin') {
             return redirect()->route('admin');
         }
-
-        if ($user->hasRole('pos')) {
+        if ($user->hasRole('pos') || $role === 'pos') {
             return redirect()->route('pos');
         }
-
-        if ($user->hasRole('kitchen')) {
+        if ($user->hasRole('kitchen') || $role === 'kitchen') {
             return redirect()->route('kitchen');
         }
-
-        return redirect()->intended(route('dashboard'));
+        if ($user->hasRole('desk') || $role === 'desk') {
+            return redirect()->route('dashboard');
+        }
+        return redirect()->route('dashboard');
     }
 
     /**

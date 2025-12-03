@@ -26,6 +26,7 @@ Route::middleware(['web', 'auth', 'active', 'role:admin'])->group(function () {
     Route::delete('/menu-items/{menuItem}', [MenuItemController::class, 'destroy']);
 
     Route::get('/orders/summary', [OrderController::class, 'summary']);
+    Route::get('/orders/export', [OrderController::class, 'export']);
     Route::post('/orders/purge', [OrderController::class, 'purge']);
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
