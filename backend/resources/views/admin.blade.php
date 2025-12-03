@@ -331,6 +331,7 @@
                             <input id="posBarcodeInput" placeholder="Focus here and scan" style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--af-line); font-size:16px;" />
                             <small class="muted" id="posScanStatus" style="display:block; margin-top:6px;">Ready to scan.</small>
                             <div id="posLookupResult" class="item" style="display:none; flex-direction:column; align-items:flex-start; margin-top:10px;"></div>
+                            <div id="posSavedCustomers" style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;"></div>
                         </div>
                         <div style="border:1px solid var(--af-line); border-radius:14px; padding:12px; background:#fff;">
                             <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
@@ -338,6 +339,20 @@
                                 <span class="pill">Auto-print</span>
                             </div>
                             <div id="posCartList" class="list" style="margin-top:8px;"></div>
+                            <div style="margin-top:10px; border-top:1px dashed var(--af-line); padding-top:10px; display:grid; gap:6px;">
+                                <div style="display:flex; justify-content:space-between;"><span class="muted">Subtotal</span><strong id="posSubtotal">₦0</strong></div>
+                                <div style="display:flex; gap:8px; align-items:center; justify-content:space-between;">
+                                    <span class="muted">Discount</span>
+                                    <input id="posDiscount" type="number" min="0" step="1" value="0" style="width:120px; padding:8px; border-radius:10px; border:1px solid var(--af-line);" />
+                                </div>
+                                <div style="display:flex; gap:8px; align-items:center; justify-content:space-between;">
+                                    <span class="muted">Tax / Fee</span>
+                                    <input id="posTax" type="number" min="0" step="1" value="0" style="width:120px; padding:8px; border-radius:10px; border:1px solid var(--af-line);" />
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-weight:700;">
+                                    <span>Total</span><span id="posGrandTotal">₦0</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -364,6 +379,15 @@
                     <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                         <button class="btn-primary" id="posCheckoutBtn">Complete Sale & Print Receipt</button>
                         <small class="muted">Saves order with seller info and prints a receipt.</small>
+                        <button class="btn-ghost" id="posParkBtn">Park ticket</button>
+                    </div>
+
+                    <div style="margin-top:12px; border:1px solid var(--af-line); border-radius:12px; padding:10px; background:#fff;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            <strong>Parked tickets</strong>
+                            <small class="muted">Hold & resume orders</small>
+                        </div>
+                        <div id="posParkedList" class="list" style="margin-top:8px;"></div>
                     </div>
                 </div>
             </section>
@@ -426,6 +450,13 @@
         const posCustomerPhone = document.getElementById('posCustomerPhone');
         const posPaymentMethod = document.getElementById('posPaymentMethod');
         const posCheckoutBtn = document.getElementById('posCheckoutBtn');
+        const posDiscount = document.getElementById('posDiscount');
+        const posTax = document.getElementById('posTax');
+        const posSubtotal = document.getElementById('posSubtotal');
+        const posGrandTotal = document.getElementById('posGrandTotal');
+        const posParkBtn = document.getElementById('posParkBtn');
+        const posParkedList = document.getElementById('posParkedList');
+        const posSavedCustomers = document.getElementById('posSavedCustomers');
         const barcodeCache = {};
         let menuCacheReady = false;
         let lastSummary = null;
@@ -440,6 +471,28 @@
             isInteracting = true;
             clearTimeout(interactionTimeout);
             interactionTimeout = setTimeout(() => { isInteracting = false; }, 2000);
+        };
+
+        const loadSavedCustomers = () => {
+            try {
+                const data = JSON.parse(localStorage.getItem('pos_saved_customers') || '[]');
+                return Array.isArray(data) ? data.slice(0, 6) : [];
+            } catch { return []; }
+        };
+
+        const persistSavedCustomers = (list) => {
+            localStorage.setItem('pos_saved_customers', JSON.stringify(list.slice(0, 6)));
+        };
+
+        const loadParkedTickets = () => {
+            try {
+                const data = JSON.parse(localStorage.getItem('pos_parked_tickets') || '[]');
+                return Array.isArray(data) ? data : [];
+            } catch { return []; }
+        };
+
+        const persistParkedTickets = (list) => {
+            localStorage.setItem('pos_parked_tickets', JSON.stringify(list));
         };
 
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
@@ -758,6 +811,8 @@
             if (!posCart.length) {
                 posCartList.innerHTML = '<div class="item">Cart is empty.</div>';
                 posCartTotal.textContent = '₦0';
+                if (posSubtotal) posSubtotal.textContent = '₦0';
+                if (posGrandTotal) posGrandTotal.textContent = '₦0';
                 return;
             }
 
@@ -783,6 +838,7 @@
             }).join('');
 
             posCartTotal.textContent = '₦' + total.toLocaleString();
+            renderTotals();
         }
 
         function addToPosCart(item) {
@@ -803,6 +859,21 @@
 
         function computePosTotal() {
             return posCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        }
+
+        function computeGrandTotal() {
+            const subtotal = computePosTotal();
+            const discount = Number(posDiscount ? posDiscount.value : 0) || 0;
+            const tax = Number(posTax ? posTax.value : 0) || 0;
+            return Math.max(0, subtotal - discount + tax);
+        }
+
+        function renderTotals() {
+            const subtotal = computePosTotal();
+            const grand = computeGrandTotal();
+            if (posSubtotal) posSubtotal.textContent = '₦' + subtotal.toLocaleString();
+            if (posGrandTotal) posGrandTotal.textContent = '₦' + grand.toLocaleString();
+            if (posCartTotal) posCartTotal.textContent = '₦' + grand.toLocaleString();
         }
 
         window.updatePosQty = (index, action) => {
@@ -844,7 +915,7 @@
             // Instant local cache hit (kept fresh by loadMenu)
             if (barcodeCache[barcode]) {
                 const item = barcodeCache[barcode];
-                if (item.is_sold_out) {
+                if (item.is_sold_out || item.stock === 0) {
                     const msg = 'Item found but currently marked sold out.';
                     showLookupError(msg);
                     setPosStatus(msg, 'error');
@@ -974,10 +1045,12 @@
                     price: item.price,
                 })),
                 payment: {
-                    amount: computePosTotal(),
+                    amount: computeGrandTotal(),
                     method: posPaymentMethod ? posPaymentMethod.value : 'cash',
                     reference: `POS-${Date.now()}`,
                 },
+                discount: Number(posDiscount ? posDiscount.value : 0) || 0,
+                tax: Number(posTax ? posTax.value : 0) || 0,
             };
 
             await runAction(posCheckoutBtn, async () => {
@@ -991,12 +1064,122 @@
                 openPosReceipt(order);
                 posCart = [];
                 renderPosCart();
+                saveRecentCustomer(payload.customer_name, payload.customer_phone);
                 if (posBarcodeInput) {
                     posBarcodeInput.value = '';
                     posBarcodeInput.focus();
                 }
                 await Promise.all([loadOrders(), loadOrderSummary()]);
             });
+        });
+
+        if (posDiscount) posDiscount.addEventListener('input', renderTotals);
+        if (posTax) posTax.addEventListener('input', renderTotals);
+
+        const saveRecentCustomer = (name, phone) => {
+            if (!name && !phone) return;
+            const list = loadSavedCustomers();
+            const existingIndex = list.findIndex(c => c.name === name && c.phone === phone);
+            if (existingIndex >= 0) list.splice(existingIndex, 1);
+            list.unshift({ name: name || 'Walk-in', phone: phone || '' });
+            persistSavedCustomers(list);
+            renderSavedCustomers();
+        };
+
+        const renderSavedCustomers = () => {
+            if (!posSavedCustomers) return;
+            const list = loadSavedCustomers();
+            if (!list.length) {
+                posSavedCustomers.innerHTML = '';
+                return;
+            }
+            posSavedCustomers.innerHTML = list.map(c => `
+                <button class="btn-ghost" data-fill-name="${c.name || ''}" data-fill-phone="${c.phone || ''}" style="font-size:12px; padding:6px 10px; border-radius:999px;">
+                    ${c.name || 'Walk-in'}${c.phone ? ' · ' + c.phone : ''}
+                </button>
+            `).join('');
+        };
+
+        if (posSavedCustomers) posSavedCustomers.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-fill-name]');
+            if (!btn) return;
+            if (posCustomerName) posCustomerName.value = btn.getAttribute('data-fill-name') || '';
+            if (posCustomerPhone) posCustomerPhone.value = btn.getAttribute('data-fill-phone') || '';
+        });
+
+        const renderParkedTickets = () => {
+            if (!posParkedList) return;
+            const list = loadParkedTickets();
+            if (!list.length) {
+                posParkedList.innerHTML = '<div class="item">No parked tickets.</div>';
+                return;
+            }
+            posParkedList.innerHTML = list.map((t, idx) => `
+                <div class="item" style="align-items:center;">
+                    <div>
+                        <strong>${t.name || 'Walk-in'}</strong>
+                        <div class="muted" style="font-size:12px;">${new Date(t.created_at).toLocaleTimeString()}</div>
+                        <div class="muted" style="font-size:12px;">Items: ${t.cart.length}</div>
+                    </div>
+                    <div class="row" style="gap:6px;">
+                        <button class="btn-ghost" data-resume="${idx}">Resume</button>
+                        <button class="btn-ghost" data-drop="${idx}">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        const parkCurrentTicket = () => {
+            if (!posCart.length) {
+                alert('Nothing to park.');
+                return;
+            }
+            const list = loadParkedTickets();
+            list.unshift({
+                created_at: Date.now(),
+                cart: posCart.map(i => ({ ...i })),
+                name: posCustomerName ? posCustomerName.value : '',
+                phone: posCustomerPhone ? posCustomerPhone.value : '',
+                method: posPaymentMethod ? posPaymentMethod.value : 'cash',
+                discount: Number(posDiscount ? posDiscount.value : 0) || 0,
+                tax: Number(posTax ? posTax.value : 0) || 0,
+            });
+            persistParkedTickets(list.slice(0, 10));
+            posCart = [];
+            renderPosCart();
+            if (posBarcodeInput) posBarcodeInput.value = '';
+            renderParkedTickets();
+        };
+
+        if (posParkBtn) posParkBtn.addEventListener('click', parkCurrentTicket);
+
+        if (posParkedList) posParkedList.addEventListener('click', (e) => {
+            const resume = e.target.closest('[data-resume]');
+            const drop = e.target.closest('[data-drop]');
+            const list = loadParkedTickets();
+            if (resume) {
+                const idx = Number(resume.getAttribute('data-resume'));
+                const ticket = list[idx];
+                if (ticket) {
+                    posCart = ticket.cart || [];
+                    if (posCustomerName) posCustomerName.value = ticket.name || '';
+                    if (posCustomerPhone) posCustomerPhone.value = ticket.phone || '';
+                    if (posPaymentMethod) posPaymentMethod.value = ticket.method || 'cash';
+                    if (posDiscount) posDiscount.value = ticket.discount || 0;
+                    if (posTax) posTax.value = ticket.tax || 0;
+                    renderPosCart();
+                    renderTotals();
+                    if (posBarcodeInput) posBarcodeInput.focus();
+                }
+            }
+            if (drop) {
+                const idx = Number(drop.getAttribute('data-drop'));
+                if (!Number.isNaN(idx)) {
+                    list.splice(idx, 1);
+                    persistParkedTickets(list);
+                    renderParkedTickets();
+                }
+            }
         });
 
         if (purgeOrdersBtn) purgeOrdersBtn.addEventListener('click', async () => {
@@ -1225,6 +1408,8 @@
             renderPosCart();
             if (posBarcodeInput) posBarcodeInput.focus();
             await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadOrderSummary(), loadUsers()]);
+            renderSavedCustomers();
+            renderParkedTickets();
 
             // Live refresh
             const refresh = async () => {
