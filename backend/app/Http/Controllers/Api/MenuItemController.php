@@ -33,6 +33,7 @@ class MenuItemController extends Controller
         $data = $request->validate([
             'category_id' => 'nullable|exists:categories,id',
             'name' => 'required|string|max:255',
+            'barcode' => 'nullable|string|max:32|unique:menu_items,barcode',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'is_sold_out' => 'boolean',
@@ -48,6 +49,7 @@ class MenuItemController extends Controller
         }
 
         $data['slug'] = Str::slug($data['name'] . '-' . Str::random(6));
+        $data['barcode'] = $data['barcode'] ?? MenuItem::generateBarcode();
 
         $item = MenuItem::create($data);
 
@@ -65,6 +67,7 @@ class MenuItemController extends Controller
         $data = $request->validate([
             'category_id' => 'nullable|exists:categories,id',
             'name' => 'sometimes|required|string|max:255',
+            'barcode' => 'nullable|string|max:32|unique:menu_items,barcode,' . $menuItem->id,
             'description' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
             'is_sold_out' => 'boolean',
@@ -92,6 +95,34 @@ class MenuItemController extends Controller
         }
 
         return response()->json($menuItem->load('category'));
+    }
+
+    public function regenerateBarcode(MenuItem $menuItem)
+    {
+        $menuItem->update(['barcode' => MenuItem::generateBarcode()]);
+
+        return response()->json($menuItem->load('category'));
+    }
+
+    public function lookup(Request $request)
+    {
+        $data = $request->validate([
+            'barcode' => 'required|string',
+        ]);
+
+        $item = MenuItem::with('category')
+            ->where('barcode', $data['barcode'])
+            ->first();
+
+        if (! $item) {
+            return response()->json(['message' => 'Item not found'], 404);
+        }
+
+        if ($item->is_sold_out) {
+            return response()->json(['message' => 'Item is sold out'], 409);
+        }
+
+        return response()->json($item);
     }
 
     public function toggleSoldOut(MenuItem $menuItem)

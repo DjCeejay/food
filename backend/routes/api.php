@@ -11,6 +11,7 @@ Route::get('/health', fn () => ['status' => 'ok']);
 // Public endpoints for the website
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/menu-items', [MenuItemController::class, 'index']);
+Route::get('/menu-items/lookup', [MenuItemController::class, 'lookup']);
 Route::post('/orders', [OrderController::class, 'store']);
 
 Route::middleware(['web', 'auth', 'active', 'role:admin'])->group(function () {
@@ -21,6 +22,7 @@ Route::middleware(['web', 'auth', 'active', 'role:admin'])->group(function () {
     Route::post('/menu-items', [MenuItemController::class, 'store']);
     Route::put('/menu-items/{menuItem}', [MenuItemController::class, 'update']);
     Route::post('/menu-items/{menuItem}/toggle-sold-out', [MenuItemController::class, 'toggleSoldOut']);
+    Route::post('/menu-items/{menuItem}/regenerate-barcode', [MenuItemController::class, 'regenerateBarcode']);
     Route::delete('/menu-items/{menuItem}', [MenuItemController::class, 'destroy']);
 
     Route::get('/orders', [OrderController::class, 'index']);

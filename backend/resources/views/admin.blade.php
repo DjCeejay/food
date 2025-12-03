@@ -271,10 +271,25 @@
 
             <section class="panel" data-section="pos">
                 <div class="card">
-                    <h2>POS (stub)</h2>
-                    <p class="muted">Quick POS entry—will be expanded with cart/payments.</p>
-                    <div class="row" style="gap:10px; flex-wrap:wrap;">
-                        <button class="btn-primary" onclick="alert('POS flow to be implemented')">Start Order</button>
+                    <h2>POS</h2>
+                    <p class="muted">Scan or type a barcode to add the latest-priced item to the order.</p>
+                    <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-start;">
+                        <div style="flex:1; min-width:260px;">
+                            <label style="display:block; font-size:13px; color:rgba(0,0,0,0.6); margin-bottom:6px;">Scan / Enter barcode</label>
+                            <input id="posBarcodeInput" placeholder="Focus here and scan" style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--af-line); font-size:16px;" />
+                            <small class="muted" id="posScanStatus" style="display:block; margin-top:6px;">Ready to scan.</small>
+                        </div>
+                        <div style="flex:1; min-width:280px;">
+                            <div id="posLookupResult" class="item" style="display:none; flex-direction:column; align-items:flex-start;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-top:14px;">
+                        <h3 style="margin:0 0 8px;">POS Cart</h3>
+                        <div id="posCartList" class="list"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding:10px 12px; border:1px solid var(--af-line); border-radius:12px; background:#fff;">
+                            <strong>Total</strong>
+                            <strong id="posCartTotal">₦0</strong>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -318,6 +333,13 @@
         const statRevenue = document.getElementById('statRevenue');
         const healthDetail = document.getElementById('healthDetail');
         const roles = ['admin', 'staff', 'pos', 'kitchen', 'desk'];
+        const posBarcodeInput = document.getElementById('posBarcodeInput');
+        const posLookupResult = document.getElementById('posLookupResult');
+        const posScanStatus = document.getElementById('posScanStatus');
+        const posCartList = document.getElementById('posCartList');
+        const posCartTotal = document.getElementById('posCartTotal');
+        let posCart = [];
+        let lastLookup = null;
         let isInteracting = false;
         let interactionTimeout;
 
@@ -402,6 +424,11 @@
                                     ${item.is_sold_out ? 'Sold Out' : 'Available'}
                                 </span>
                             </div>
+                            <div class="row" style="gap:6px; margin-top:6px; flex-wrap:wrap;">
+                                <span class="pill">Barcode: ${item.barcode || 'Not set'}</span>
+                                <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="copyBarcode('${item.barcode || ''}')">Copy</button>
+                                <button class="btn-ghost" onclick="regenBarcode(${item.id})">Regenerate</button>
+                            </div>
                         </div>
                     </div>
                     <div class="row" style="gap:6px;">
@@ -485,6 +512,120 @@
             `).join('');
         }
 
+        function setPosStatus(message, tone = 'muted') {
+            if (!posScanStatus) return;
+            posScanStatus.textContent = message;
+            posScanStatus.style.color = tone === 'error' ? '#b91c1c' : 'rgba(0,0,0,0.6)';
+        }
+
+        function renderPosCart() {
+            if (!posCartList || !posCartTotal) return;
+            if (!posCart.length) {
+                posCartList.innerHTML = '<div class="item">Cart is empty.</div>';
+                posCartTotal.textContent = '₦0';
+                return;
+            }
+
+            let total = 0;
+            posCartList.innerHTML = posCart.map((item, index) => {
+                const line = item.price * item.qty;
+                total += line;
+                return `
+                    <div class="item" style="align-items:center;">
+                        <div>
+                            <h4>${item.name}</h4>
+                            <div class="row" style="gap:6px;">
+                                <span class="pill">Barcode: ${item.barcode || 'n/a'}</span>
+                                <span class="pill">₦${Number(item.price).toLocaleString()} × ${item.qty}</span>
+                            </div>
+                        </div>
+                        <div class="row" style="gap:6px;">
+                            <button class="btn-ghost" onclick="updatePosQty(${index}, 'dec')">-</button>
+                            <button class="btn-ghost" onclick="updatePosQty(${index}, 'inc')">+</button>
+                            <button class="btn-ghost" onclick="updatePosQty(${index}, 'remove')">Remove</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            posCartTotal.textContent = '₦' + total.toLocaleString();
+        }
+
+        function addToPosCart(item) {
+            const existing = posCart.find((i) => i.id === item.id);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                posCart.push({
+                    id: item.id,
+                    name: item.name,
+                    price: Number(item.price) || 0,
+                    barcode: item.barcode,
+                    qty: 1,
+                });
+            }
+            renderPosCart();
+        }
+
+        window.updatePosQty = (index, action) => {
+            const item = posCart[index];
+            if (!item) return;
+            if (action === 'inc') item.qty += 1;
+            if (action === 'dec') item.qty = Math.max(1, item.qty - 1);
+            if (action === 'remove') posCart.splice(index, 1);
+            renderPosCart();
+        };
+
+        function showLookupResult(item) {
+            if (!posLookupResult) return;
+            lastLookup = item;
+            posLookupResult.style.display = 'flex';
+            posLookupResult.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <h4 style="margin:0;">${item.name}</h4>
+                    <div class="row" style="gap:6px; flex-wrap:wrap;">
+                        <span class="pill">Price: ₦${Number(item.price).toLocaleString()}</span>
+                        <span class="pill">Barcode: ${item.barcode}</span>
+                        <span class="pill">${item.category?.name || 'Uncategorized'}</span>
+                    </div>
+                    <button class="btn-primary" data-add-pos-item>Add to cart</button>
+                </div>
+            `;
+        }
+
+        function showLookupError(message) {
+            if (!posLookupResult) return;
+            lastLookup = null;
+            posLookupResult.style.display = 'flex';
+            posLookupResult.innerHTML = `<div class="muted">${message}</div>`;
+        }
+
+        async function lookupBarcode(barcode) {
+            if (!barcode) return;
+            setPosStatus('Looking up barcode...');
+            try {
+                const res = await apiFetch(`/api/menu-items/lookup?barcode=${encodeURIComponent(barcode)}`);
+                if (!res.ok) {
+                    const msg = res.status === 404
+                        ? 'No item found for this barcode.'
+                        : res.status === 409
+                            ? 'Item found but currently marked sold out.'
+                            : 'Could not look up this barcode.';
+                    showLookupError(msg);
+                    setPosStatus(msg, 'error');
+                    return;
+                }
+                const item = await res.json();
+                showLookupResult(item);
+                setPosStatus('Found. Price pulled live; add to cart.');
+            } catch (e) {
+                showLookupError('Lookup failed. Check connection.');
+                setPosStatus('Lookup failed.', 'error');
+            } finally {
+                posBarcodeInput?.select();
+            }
+        }
+
         categoryForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = new FormData(categoryForm);
@@ -512,6 +653,21 @@
             await Promise.all([loadMenu(), loadCategories()]);
         });
 
+        posLookupResult?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-add-pos-item]');
+            if (!btn || !lastLookup) return;
+            addToPosCart(lastLookup);
+        });
+
+        posBarcodeInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const code = e.target.value.trim();
+                if (!code) return;
+                lookupBarcode(code);
+            }
+        });
+
         window.toggleSoldOut = async (id) => {
             await apiFetch(`/api/menu-items/${id}/toggle-sold-out`, { method: 'POST' });
             await loadMenu();
@@ -526,6 +682,29 @@
         window.deleteMenuItem = async (id) => {
             if (!confirm('Delete this menu item?')) return;
             await apiFetch(`/api/menu-items/${id}`, { method: 'DELETE' });
+            await loadMenu();
+        };
+
+        window.copyBarcode = async (code) => {
+            if (!code) {
+                alert('This item does not have a barcode yet.');
+                return;
+            }
+            try {
+                if (navigator?.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(code);
+                    alert('Barcode copied to clipboard.');
+                } else {
+                    throw new Error('Clipboard unavailable');
+                }
+            } catch (e) {
+                alert(`Barcode: ${code}`);
+            }
+        };
+
+        window.regenBarcode = async (id) => {
+            if (!confirm('Regenerate barcode? Printed labels with the old code will stop working.')) return;
+            await apiFetch(`/api/menu-items/${id}/regenerate-barcode`, { method: 'POST' });
             await loadMenu();
         };
 
@@ -579,6 +758,8 @@
 
         async function init() {
             await checkHealth();
+            renderPosCart();
+            posBarcodeInput?.focus();
             await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadUsers()]);
 
             // Live refresh every 8 seconds

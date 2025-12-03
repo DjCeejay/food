@@ -14,6 +14,7 @@ class MenuItem extends Model
         'category_id',
         'name',
         'slug',
+        'barcode',
         'description',
         'price',
         'is_sold_out',
@@ -35,7 +36,21 @@ class MenuItem extends Model
             if (empty($item->slug)) {
                 $item->slug = Str::slug($item->name . '-' . Str::random(6));
             }
+
+            if (empty($item->barcode)) {
+                $item->barcode = static::generateBarcode();
+            }
         });
+    }
+
+    public static function generateBarcode(): string
+    {
+        do {
+            // 12-digit numeric code friendly to common barcode formats (e.g., Code 128)
+            $barcode = (string) random_int(100_000_000_000, 999_999_999_999);
+        } while (static::where('barcode', $barcode)->exists());
+
+        return $barcode;
     }
 
     public function category()
