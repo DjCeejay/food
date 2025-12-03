@@ -152,9 +152,9 @@
         }
     </style>
 </head>
-<body>
+    <body>
+    <button class="hamburger" id="toggleSidebar">☰</button>
     <aside class="sidebar" id="sidebar">
-        <button class="hamburger" id="toggleSidebar">☰</button>
         <div class="brand">
             <img src="/assets/logo.png" alt="Acie Fraiche Logo">
             <div>
@@ -559,19 +559,24 @@
 
         if (toggleSidebar) {
             toggleSidebar.addEventListener('click', () => {
-                if (window.innerWidth <= 960) {
+                const isMobile = window.innerWidth <= 960;
+                if (isMobile) {
                     sidebar.classList.toggle('open');
                 } else {
                     document.body.classList.toggle('collapsed');
                     sidebar.classList.toggle('collapsed');
                 }
+                toggleSidebar.setAttribute('aria-expanded', sidebar.classList.contains('open') ? 'true' : 'false');
             });
         }
 
         function switchTab(tab) {
             navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
             panels.forEach(p => p.classList.toggle('active', p.dataset.section === tab));
-            if (window.innerWidth <= 960) sidebar.classList.remove('open');
+            if (window.innerWidth <= 960) {
+                sidebar.classList.remove('open');
+                toggleSidebar.setAttribute('aria-expanded', 'false');
+            }
         }
         navBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
