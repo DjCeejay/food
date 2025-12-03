@@ -192,8 +192,8 @@
             <div class="stats">
                 <div class="stat"><h3 id="statCategories">0</h3><span>Categories</span></div>
                 <div class="stat"><h3 id="statItems">0</h3><span>Menu items</span></div>
-                <div class="stat"><h3 id="statOrders">0</h3><span>Orders</span></div>
-                <div class="stat"><h3 id="statRevenue">₦0</h3><span>Revenue</span></div>
+                <div class="stat"><h3 id="statOrders">0</h3><span>Orders today</span></div>
+                <div class="stat"><h3 id="statRevenue">₦0</h3><span>Revenue today</span></div>
             </div>
         </div>
 
@@ -265,10 +265,19 @@
                 <div class="card">
                     <h2>Orders</h2>
                     <p class="muted">Recent orders (sample data seeded).</p>
+                    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 12px;">
+                        <div id="ordersChart" style="flex:1; min-width:260px; background:#fff; border:1px solid var(--af-line); border-radius:12px; padding:10px;">
+                            <div class="muted" style="font-size:12px; margin-bottom:6px;">Revenue (last 7 days)</div>
+                            <div id="ordersChartBars" style="display:flex; align-items:flex-end; gap:8px; height:120px;"></div>
+                            <div id="ordersChartLabels" style="display:flex; gap:8px; justify-content:space-between; font-size:11px; color:rgba(0,0,0,0.6); margin-top:6px;"></div>
+                        </div>
+                        <button class="btn-ghost" id="purgeOrdersBtn" style="white-space:nowrap;">Delete test orders</button>
+                    </div>
                     <table id="ordersTable">
                         <thead>
                             <tr>
                                 <th>Code</th>
+                                <th>Seller</th>
                                 <th>Status</th>
                                 <th>Total</th>
                                 <th>Channel</th>
@@ -368,6 +377,9 @@
         const menuCategorySelect = document.getElementById('menuCategorySelect');
         const usersList = document.getElementById('usersList');
         const ordersTableBody = document.querySelector('#ordersTable tbody');
+        const ordersChartBars = document.getElementById('ordersChartBars');
+        const ordersChartLabels = document.getElementById('ordersChartLabels');
+        const purgeOrdersBtn = document.getElementById('purgeOrdersBtn');
         const statCategories = document.getElementById('statCategories');
         const statItems = document.getElementById('statItems');
         const statOrders = document.getElementById('statOrders');
@@ -384,6 +396,7 @@
         const posPaymentMethod = document.getElementById('posPaymentMethod');
         const posCheckoutBtn = document.getElementById('posCheckoutBtn');
         const barcodeCache = {};
+        let menuCacheReady = false;
         let posCart = [];
         let lastLookup = null;
         let isInteracting = false;
@@ -569,6 +582,7 @@
                 return `
                     <tr>
                         <td>${o.code}</td>
+                        <td>${o.creator && o.creator.name ? o.creator.name : '—'}</td>
                         <td>${o.status}</td>
                         <td>₦${Number(o.total).toLocaleString()}</td>
                         <td>${o.channel}</td>
@@ -576,8 +590,32 @@
                     </tr>
                 `;
             }).join('');
-            statOrders.textContent = orders.length;
-            statRevenue.textContent = '₦' + revenue.toLocaleString();
+        }
+
+        function renderSummary(summary) {
+            if (summary) {
+                statOrders.textContent = summary.today_orders ?? 0;
+                statRevenue.textContent = '₦' + Number(summary.today_revenue || 0).toLocaleString();
+                renderChart(summary.series || []);
+            }
+        }
+
+        function renderChart(series) {
+            if (!ordersChartBars || !ordersChartLabels) return;
+            if (!Array.isArray(series) || !series.length) {
+                ordersChartBars.innerHTML = '<div class="muted">No data</div>';
+                ordersChartLabels.innerHTML = '';
+                return;
+            }
+            const maxRevenue = Math.max(...series.map(s => Number(s.revenue || 0)), 1);
+            ordersChartBars.innerHTML = series.map(s => {
+                const height = Math.max(4, (Number(s.revenue || 0) / maxRevenue) * 100);
+                return `<div title="₦${Number(s.revenue || 0).toLocaleString()}" style="flex:1; min-width:10px; background:var(--af-brown); height:${height}%; border-radius:6px 6px 2px 2px;"></div>`;
+            }).join('');
+            ordersChartLabels.innerHTML = series.map(s => {
+                const label = s.day ? s.day.slice(5) : '';
+                return `<span style="flex:1; text-align:center;">${label}</span>`;
+            }).join('');
         }
 
         async function loadCategories() {
@@ -602,6 +640,7 @@
                         barcodeCache[item.barcode] = item;
                     }
                 });
+                menuCacheReady = true;
                 renderMenu(data);
             } catch (e) {
                 console.error(e);
@@ -617,7 +656,17 @@
                 renderOrders(data);
             } catch (e) {
                 console.error(e);
-                ordersTableBody.innerHTML = '<tr><td colspan="5">Could not load orders.</td></tr>';
+                ordersTableBody.innerHTML = '<tr><td colspan="6">Could not load orders.</td></tr>';
+            }
+        }
+
+        async function loadOrderSummary() {
+            try {
+                const res = await safeRequest('/api/orders/summary');
+                const data = await res.json();
+                renderSummary(data);
+            } catch (e) {
+                console.error('Could not load summary', e);
             }
         }
 
@@ -911,6 +960,14 @@
             });
         });
 
+        if (purgeOrdersBtn) purgeOrdersBtn.addEventListener('click', async () => {
+            if (!confirm('Delete all orders? This cannot be undone.')) return;
+            await runAction(purgeOrdersBtn, async () => {
+                await safeRequest('/api/orders/purge', { method: 'POST' });
+                await Promise.all([loadOrders(), loadOrderSummary()]);
+            });
+        });
+
         function openPosReceipt(order) {
             try {
                 const receiptWindow = window.open('', 'pos-receipt');
@@ -1128,12 +1185,12 @@
             await checkHealth();
             renderPosCart();
             if (posBarcodeInput) posBarcodeInput.focus();
-            await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadUsers()]);
+            await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadOrderSummary(), loadUsers()]);
 
             // Live refresh every 8 seconds
             const refresh = async () => {
                 if (isInteracting) return;
-                await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadUsers()]);
+                await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadOrderSummary(), loadUsers()]);
             };
             setInterval(refresh, 8000);
 

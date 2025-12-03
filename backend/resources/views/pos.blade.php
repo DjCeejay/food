@@ -128,6 +128,7 @@
         const posPaymentMethod = document.getElementById('posPaymentMethod');
         const posCheckoutBtn = document.getElementById('posCheckoutBtn');
         const barcodeCache = {};
+        let menuCacheReady = false;
 
         let posCart = [];
         let lastLookup = null;
@@ -250,6 +251,20 @@
             posLookupResult.innerHTML = `<div class="muted">${message}</div>`;
         }
 
+        async function prefetchMenuCache() {
+            try {
+                const res = await safeRequest('/api/menu-items');
+                const data = await res.json();
+                Object.keys(barcodeCache).forEach(k => delete barcodeCache[k]);
+                data.forEach(item => {
+                    if (item.barcode) barcodeCache[item.barcode] = item;
+                });
+                menuCacheReady = true;
+            } catch (e) {
+                console.warn('Menu prefetch failed; will fall back to live lookup.', e);
+            }
+        }
+
         async function lookupBarcode(barcode, { addToCartOnSuccess = false } = {}) {
             if (!barcode) return;
 
@@ -328,7 +343,7 @@
                 setPosStatus('Ready to scan.');
                 return;
             }
-            scanDebounce = setTimeout(() => lookupBarcode(code, { addToCartOnSuccess: true }), 50);
+            scanDebounce = setTimeout(() => lookupBarcode(code, { addToCartOnSuccess: true }), 10);
         });
 
         if (posCheckoutBtn) posCheckoutBtn.addEventListener('click', async () => {
@@ -432,6 +447,7 @@
 
         renderPosCart();
         if (posBarcodeInput) posBarcodeInput.focus();
+        prefetchMenuCache();
     </script>
 </body>
 </html>

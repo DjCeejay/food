@@ -7,6 +7,7 @@ use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -15,7 +16,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with(['items', 'payments'])->orderByDesc('created_at');
+        $query = Order::with(['items', 'payments', 'creator'])->orderByDesc('created_at');
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -23,6 +24,10 @@ class OrderController extends Controller
 
         if ($request->filled('channel')) {
             $query->where('channel', $request->input('channel'));
+        }
+
+        if ($request->boolean('all', false)) {
+            return $query->get();
         }
 
         return $query->paginate(25);
@@ -109,5 +114,48 @@ class OrderController extends Controller
 
             return $order->load(['items', 'payments']);
         });
+    }
+
+    public function summary()
+    {
+        $today = Carbon::today();
+
+        $todayOrders = Order::whereDate('created_at', $today)->count();
+        $todayRevenue = Order::whereDate('created_at', $today)->sum('total');
+
+        $since = Carbon::today()->subDays(6);
+        $seriesRaw = Order::selectRaw('DATE(created_at) as day, COUNT(*) as orders, SUM(total) as revenue')
+            ->whereDate('created_at', '>=', $since)
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get();
+
+        $series = [];
+        for ($i = 0; $i < 7; $i++) {
+            $day = $since->copy()->addDays($i)->format('Y-m-d');
+            $found = $seriesRaw->firstWhere('day', $day);
+            $series[] = [
+                'day' => $day,
+                'orders' => (int) ($found->orders ?? 0),
+                'revenue' => (float) ($found->revenue ?? 0),
+            ];
+        }
+
+        return [
+            'today_orders' => $todayOrders,
+            'today_revenue' => (float) $todayRevenue,
+            'series' => $series,
+        ];
+    }
+
+    public function purge()
+    {
+        DB::transaction(function () {
+            Payment::query()->delete();
+            OrderItem::query()->delete();
+            Order::query()->delete();
+        });
+
+        return response()->json(['message' => 'All orders cleared.']);
     }
 }

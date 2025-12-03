@@ -27,6 +27,8 @@ Route::middleware(['web', 'auth', 'active', 'role:admin'])->group(function () {
 
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
+    Route::get('/orders/summary', [OrderController::class, 'summary']);
+    Route::post('/orders/purge', [OrderController::class, 'purge']);
 
     Route::get('/users', [UserAdminController::class, 'index']);
     Route::put('/users/{user}', [UserAdminController::class, 'update']);
