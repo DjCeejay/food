@@ -314,48 +314,56 @@
 
             <section class="panel" data-section="pos">
                 <div class="card">
-                    <h2>POS</h2>
-                    <p class="muted">Scan or type a barcode to add the latest-priced item to the order.</p>
-                    <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-start;">
-                        <div style="flex:1; min-width:260px;">
-                            <label style="display:block; font-size:13px; color:rgba(0,0,0,0.6); margin-bottom:6px;">Scan / Enter barcode</label>
-                            <input id="posBarcodeInput" placeholder="Focus here and scan" style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--af-line); font-size:16px;" />
-                            <small class="muted" id="posScanStatus" style="display:block; margin-top:6px;">Ready to scan.</small>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+                        <div>
+                            <h2 style="margin:0 0 4px;">POS</h2>
+                            <p class="muted" style="margin:0;">Scan, add, and print quickly with consistent layout.</p>
                         </div>
-                        <div style="flex:1; min-width:280px;">
-                            <div id="posLookupResult" class="item" style="display:none; flex-direction:column; align-items:flex-start;"></div>
+                        <div style="border:1px solid var(--af-line); border-radius:12px; padding:10px 12px; background:#fff; min-width:180px; text-align:right;">
+                            <div class="muted" style="font-size:12px;">Cart total</div>
+                            <div style="font-weight:800; color:var(--af-brown); font-size:18px;" id="posCartTotal">₦0</div>
                         </div>
                     </div>
-                    <div style="margin-top:14px;">
-                        <h3 style="margin:0 0 8px;">POS Cart</h3>
-                        <div id="posCartList" class="list"></div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding:10px 12px; border:1px solid var(--af-line); border-radius:12px; background:#fff;">
-                            <strong>Total</strong>
-                            <strong id="posCartTotal">₦0</strong>
+
+                    <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top:12px;">
+                        <div style="border:1px solid var(--af-line); border-radius:14px; padding:12px; background:#fff;">
+                            <label style="display:block; font-size:13px; color:rgba(0,0,0,0.7); margin-bottom:6px;">Scan / Enter barcode</label>
+                            <input id="posBarcodeInput" placeholder="Focus here and scan" style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--af-line); font-size:16px;" />
+                            <small class="muted" id="posScanStatus" style="display:block; margin-top:6px;">Ready to scan.</small>
+                            <div id="posLookupResult" class="item" style="display:none; flex-direction:column; align-items:flex-start; margin-top:10px;"></div>
                         </div>
-                        <div style="margin-top:12px; display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-                            <div style="display:grid; gap:6px;">
-                                <label style="font-size:13px; color:rgba(0,0,0,0.6);">Customer name (optional)</label>
-                                <input id="posCustomerName" placeholder="Walk-in" style="padding:10px; border-radius:12px; border:1px solid var(--af-line);" />
+                        <div style="border:1px solid var(--af-line); border-radius:14px; padding:12px; background:#fff;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                <h3 style="margin:0;">POS Cart</h3>
+                                <span class="pill">Auto-print</span>
                             </div>
-                            <div style="display:grid; gap:6px;">
-                                <label style="font-size:13px; color:rgba(0,0,0,0.6);">Customer phone</label>
-                                <input id="posCustomerPhone" placeholder="080..." style="padding:10px; border-radius:12px; border:1px solid var(--af-line);" />
-                            </div>
-                            <div style="display:grid; gap:6px;">
-                                <label style="font-size:13px; color:rgba(0,0,0,0.6);">Payment method</label>
-                                <select id="posPaymentMethod" style="padding:10px; border-radius:12px; border:1px solid var(--af-line);">
-                                    <option value="cash">Cash</option>
-                                    <option value="card">Card</option>
-                                    <option value="transfer">Transfer</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
+                            <div id="posCartList" class="list" style="margin-top:8px;"></div>
                         </div>
-                        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-                            <button class="btn-primary" id="posCheckoutBtn">Complete Sale & Print Receipt</button>
-                            <small class="muted">Saves order with seller info and prints a receipt.</small>
+                    </div>
+
+                    <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top:12px;">
+                        <div style="display:grid; gap:6px;">
+                            <label style="font-size:13px; color:rgba(0,0,0,0.7);">Customer name (optional)</label>
+                            <input id="posCustomerName" placeholder="Walk-in" style="padding:10px; border-radius:12px; border:1px solid var(--af-line);" />
                         </div>
+                        <div style="display:grid; gap:6px;">
+                            <label style="font-size:13px; color:rgba(0,0,0,0.7);">Customer phone</label>
+                            <input id="posCustomerPhone" placeholder="080..." style="padding:10px; border-radius:12px; border:1px solid var(--af-line);" />
+                        </div>
+                        <div style="display:grid; gap:6px;">
+                            <label style="font-size:13px; color:rgba(0,0,0,0.7);">Payment method</label>
+                            <select id="posPaymentMethod" style="padding:10px; border-radius:12px; border:1px solid var(--af-line);">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="transfer">Transfer</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <button class="btn-primary" id="posCheckoutBtn">Complete Sale & Print Receipt</button>
+                        <small class="muted">Saves order with seller info and prints a receipt.</small>
                     </div>
                 </div>
             </section>
