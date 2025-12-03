@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root {
             --af-gold: #cc9933;
@@ -477,7 +478,7 @@
                         <div class="menu-tags">
                             <span class="menu-pill">Barcode: ${item.barcode || 'Not set'}</span>
                             <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="copyBarcode(${JSON.stringify(item.barcode || '')}, this)">Copy</button>
-                            <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="printBarcode(${JSON.stringify(item.barcode || '')}, ${JSON.stringify(item.name || '')})">Print</button>
+                            <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="printBarcode(${JSON.stringify(item.barcode || '')}, ${JSON.stringify(item.name || '')})">Download</button>
                             <button class="btn-ghost" onclick="regenBarcode(${item.id}, this)">Regenerate</button>
                         </div>
                     </div>
@@ -790,47 +791,26 @@
                 alert('This item does not have a barcode yet.');
                 return;
             }
-            const safeCode = String(code);
-            const safeName = String(name || '');
-            const popup = window.open('', '_blank', 'width=520,height=420');
-            if (!popup) {
-                alert('Please allow pop-ups to print the barcode.');
+            if (typeof JsBarcode === 'undefined') {
+                alert('Barcode generator not loaded. Please refresh and try again.');
                 return;
             }
-            const printable = `
-<!doctype html>
-<html>
-<head>
-    <title>Barcode ${safeCode}</title>
-    <style>
-        body { margin: 0; font-family: 'Manrope', system-ui, -apple-system, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; background:#f7f1e7; }
-        .sheet { background:#fff; padding:28px; border:1px solid #e5e7eb; border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,0.12); text-align:center; width:340px; }
-        h2 { margin:0 0 8px; font-size:18px; }
-        .meta { color:#6b7280; margin:0 0 12px; }
-        svg { width:100%; }
-        @media print { body { background:#fff; } .sheet { box-shadow:none; border:1px solid #000; } }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\\/script>
-</head>
-<body>
-    <div class="sheet">
-        <h2 id="printName"></h2>
-        <p class="meta">Barcode: ${safeCode}</p>
-        <svg id="printBarcode"></svg>
-    </div>
-    <script>
-        const code = ${JSON.stringify(safeCode)};
-        const name = ${JSON.stringify(safeName)} || 'Menu Item';
-        window.onload = () => {
-            document.getElementById('printName').textContent = name;
-            JsBarcode('#printBarcode', code, { format: 'code128', width: 2, height: 80, displayValue: true, fontSize: 14 });
-            setTimeout(() => { window.focus(); window.print(); }, 200);
-        };
-    <\\/script>
-</body>
-</html>`;
-            popup.document.write(printable);
-            popup.document.close();
+            const canvas = document.createElement('canvas');
+            const safeCode = String(code);
+            const safeName = String(name || 'Menu Item');
+            JsBarcode(canvas, safeCode, {
+                format: 'code128',
+                width: 2,
+                height: 80,
+                displayValue: true,
+                fontSize: 14,
+                margin: 10,
+            });
+            const link = document.createElement('a');
+            const slug = safeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'item';
+            link.download = `${slug}-${safeCode}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         };
 
         window.regenBarcode = async (id, btn) => {
