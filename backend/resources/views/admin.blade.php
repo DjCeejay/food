@@ -374,6 +374,45 @@
             });
         };
 
+        const setBusy = (btn, busy) => {
+            if (!btn) return;
+            btn.disabled = busy;
+            if (busy) {
+                btn.dataset.originalText = btn.dataset.originalText || btn.textContent;
+                btn.textContent = 'Working...';
+            } else if (btn.dataset.originalText) {
+                btn.textContent = btn.dataset.originalText;
+            }
+        };
+
+        const safeRequest = async (url, options = {}) => {
+            const res = await apiFetch(url, options);
+            if (!res.ok) {
+                let message = `Request failed (${res.status})`;
+                try {
+                    const data = await res.clone().json();
+                    if (data?.message) message = data.message;
+                } catch (err) {
+                    const text = await res.text().catch(() => '');
+                    if (text) message = text;
+                }
+                throw new Error(message);
+            }
+            return res;
+        };
+
+        const runAction = async (btn, fn) => {
+            setBusy(btn, true);
+            try {
+                await fn();
+            } catch (e) {
+                alert(e.message || 'Could not complete that action.');
+                console.error(e);
+            } finally {
+                setBusy(btn, false);
+            }
+        };
+
         toggleSidebar?.addEventListener('click', () => {
             if (window.innerWidth <= 960) {
                 sidebar.classList.toggle('open');
@@ -411,7 +450,7 @@
                         ${cat.is_active ? 'Active' : 'Inactive'}
                     </span>
                     <div class="row" style="gap:6px;">
-                        <button class="btn-ghost" onclick="deleteCategory(${cat.id})">Delete</button>
+                        <button class="btn-ghost" onclick="deleteCategory(${cat.id}, this)">Delete</button>
                     </div>
                 </div>
             `).join('');
@@ -437,15 +476,16 @@
                         </div>
                         <div class="menu-tags">
                             <span class="menu-pill">Barcode: ${item.barcode || 'Not set'}</span>
-                            <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="copyBarcode('${item.barcode || ''}')">Copy</button>
-                            <button class="btn-ghost" onclick="regenBarcode(${item.id})">Regenerate</button>
+                            <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="copyBarcode(${JSON.stringify(item.barcode || '')}, this)">Copy</button>
+                            <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="printBarcode(${JSON.stringify(item.barcode || '')}, ${JSON.stringify(item.name || '')})">Print</button>
+                            <button class="btn-ghost" onclick="regenBarcode(${item.id}, this)">Regenerate</button>
                         </div>
                     </div>
                     <p class="menu-meta">${item.description || 'No description yet.'}</p>
                     <div class="menu-actions">
-                        <button class="btn-ghost" onclick="toggleSoldOut(${item.id})">${item.is_sold_out ? 'Mark Available' : 'Mark Sold Out'}</button>
-                        <button class="btn-ghost" onclick="editMenuItem(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})">Edit</button>
-                        <button class="btn-ghost" onclick="deleteMenuItem(${item.id})">Delete</button>
+                        <button class="btn-ghost" onclick="toggleSoldOut(${item.id}, this)">${item.is_sold_out ? 'Mark Available' : 'Mark Sold Out'}</button>
+                        <button class="btn-ghost" onclick="editMenuItem(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')}, this)">Edit</button>
+                        <button class="btn-ghost" onclick="deleteMenuItem(${item.id}, this)">Delete</button>
                     </div>
                 </div>
             `).join('');
@@ -471,29 +511,49 @@
         }
 
         async function loadCategories() {
-            const res = await apiFetch('/api/categories');
-            const data = await res.json();
-            renderCategories(data);
+            try {
+                const res = await safeRequest('/api/categories');
+                const data = await res.json();
+                renderCategories(data);
+            } catch (e) {
+                console.error(e);
+                categoryList.innerHTML = '<div class="muted">Could not load categories.</div>';
+            }
         }
 
         async function loadMenu() {
-            const res = await apiFetch('/api/menu-items');
-            const data = await res.json();
-            renderMenu(data);
+            try {
+                const res = await safeRequest('/api/menu-items');
+                const data = await res.json();
+                renderMenu(data);
+            } catch (e) {
+                console.error(e);
+                menuList.innerHTML = '<div class="muted">Could not load menu items.</div>';
+            }
         }
 
         async function loadOrders() {
-            const res = await apiFetch('/api/orders');
-            const payload = await res.json();
-            const data = payload.data || payload; // paginate or flat
-            renderOrders(data);
+            try {
+                const res = await safeRequest('/api/orders');
+                const payload = await res.json();
+                const data = payload.data || payload; // paginate or flat
+                renderOrders(data);
+            } catch (e) {
+                console.error(e);
+                ordersTableBody.innerHTML = '<tr><td colspan="5">Could not load orders.</td></tr>';
+            }
         }
 
         async function loadUsers() {
             if (!usersList) return;
-            const res = await apiFetch('/api/users');
-            const data = await res.json();
-            renderUsers(data);
+            try {
+                const res = await safeRequest('/api/users');
+                const data = await res.json();
+                renderUsers(data);
+            } catch (e) {
+                console.error(e);
+                usersList.innerHTML = '<div class="muted">Could not load users.</div>';
+            }
         }
 
         function renderUsers(users) {
@@ -640,17 +700,20 @@
         categoryForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = new FormData(categoryForm);
-            await apiFetch('/api/categories', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: form.get('name'),
-                    description: form.get('description') || null,
-                    is_active: true,
-                }),
+            const submitBtn = categoryForm.querySelector('button[type="submit"]');
+            await runAction(submitBtn, async () => {
+                await safeRequest('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: form.get('name'),
+                        description: form.get('description') || null,
+                        is_active: true,
+                    }),
+                });
+                categoryForm.reset();
+                await loadCategories();
             });
-            categoryForm.reset();
-            await loadCategories();
         });
 
         menuForm.addEventListener('submit', async (e) => {
@@ -659,9 +722,12 @@
             if (form.get('image')?.size === 0) {
                 form.delete('image');
             }
-            await apiFetch('/api/menu-items', { method: 'POST', body: form });
-            menuForm.reset();
-            await Promise.all([loadMenu(), loadCategories()]);
+            const submitBtn = menuForm.querySelector('button[type="submit"]');
+            await runAction(submitBtn, async () => {
+                await safeRequest('/api/menu-items', { method: 'POST', body: form });
+                menuForm.reset();
+                await Promise.all([loadMenu(), loadCategories()]);
+            });
         });
 
         posLookupResult?.addEventListener('click', (e) => {
@@ -679,21 +745,27 @@
             }
         });
 
-        window.toggleSoldOut = async (id) => {
-            await apiFetch(`/api/menu-items/${id}/toggle-sold-out`, { method: 'POST' });
-            await loadMenu();
+        window.toggleSoldOut = async (id, btn) => {
+            await runAction(btn, async () => {
+                await safeRequest(`/api/menu-items/${id}/toggle-sold-out`, { method: 'POST' });
+                await loadMenu();
+            });
         };
 
-        window.deleteCategory = async (id) => {
+        window.deleteCategory = async (id, btn) => {
             if (!confirm('Delete this category? Items will remain uncategorized.')) return;
-            await apiFetch(`/api/categories/${id}`, { method: 'DELETE' });
-            await Promise.all([loadCategories(), loadMenu()]);
+            await runAction(btn, async () => {
+                await safeRequest(`/api/categories/${id}`, { method: 'DELETE' });
+                await Promise.all([loadCategories(), loadMenu()]);
+            });
         };
 
-        window.deleteMenuItem = async (id) => {
+        window.deleteMenuItem = async (id, btn) => {
             if (!confirm('Delete this menu item?')) return;
-            await apiFetch(`/api/menu-items/${id}`, { method: 'DELETE' });
-            await loadMenu();
+            await runAction(btn, async () => {
+                await safeRequest(`/api/menu-items/${id}`, { method: 'DELETE' });
+                await loadMenu();
+            });
         };
 
         window.copyBarcode = async (code) => {
@@ -713,13 +785,63 @@
             }
         };
 
-        window.regenBarcode = async (id) => {
-            if (!confirm('Regenerate barcode? Printed labels with the old code will stop working.')) return;
-            await apiFetch(`/api/menu-items/${id}/regenerate-barcode`, { method: 'POST' });
-            await loadMenu();
+        window.printBarcode = (code, name = '') => {
+            if (!code) {
+                alert('This item does not have a barcode yet.');
+                return;
+            }
+            const safeCode = String(code);
+            const safeName = String(name || '');
+            const popup = window.open('', '_blank', 'width=520,height=420');
+            if (!popup) {
+                alert('Please allow pop-ups to print the barcode.');
+                return;
+            }
+            const printable = `
+<!doctype html>
+<html>
+<head>
+    <title>Barcode ${safeCode}</title>
+    <style>
+        body { margin: 0; font-family: 'Manrope', system-ui, -apple-system, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; background:#f7f1e7; }
+        .sheet { background:#fff; padding:28px; border:1px solid #e5e7eb; border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,0.12); text-align:center; width:340px; }
+        h2 { margin:0 0 8px; font-size:18px; }
+        .meta { color:#6b7280; margin:0 0 12px; }
+        svg { width:100%; }
+        @media print { body { background:#fff; } .sheet { box-shadow:none; border:1px solid #000; } }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+    <div class="sheet">
+        <h2 id="printName"></h2>
+        <p class="meta">Barcode: ${safeCode}</p>
+        <svg id="printBarcode"></svg>
+    </div>
+    <script>
+        const code = ${JSON.stringify(safeCode)};
+        const name = ${JSON.stringify(safeName)} || 'Menu Item';
+        window.onload = () => {
+            document.getElementById('printName').textContent = name;
+            JsBarcode('#printBarcode', code, { format: 'code128', width: 2, height: 80, displayValue: true, fontSize: 14 });
+            setTimeout(() => { window.focus(); window.print(); }, 200);
+        };
+    </script>
+</body>
+</html>`;
+            popup.document.write(printable);
+            popup.document.close();
         };
 
-        window.editMenuItem = async (id, item) => {
+        window.regenBarcode = async (id, btn) => {
+            if (!confirm('Regenerate barcode? Printed labels with the old code will stop working.')) return;
+            await runAction(btn, async () => {
+                await safeRequest(`/api/menu-items/${id}/regenerate-barcode`, { method: 'POST' });
+                await loadMenu();
+            });
+        };
+
+        window.editMenuItem = async (id, item, btn) => {
             const name = prompt('Name', item.name);
             if (name === null || name.trim() === '') return;
             const priceInput = prompt('Price (NGN)', item.price);
@@ -730,41 +852,49 @@
             }
             const description = prompt('Description', item.description || '') ?? '';
             const category_id = prompt('Category ID (leave blank to unset)', item.category_id || '') || null;
-            await apiFetch(`/api/menu-items/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name,
-                    price,
-                    description: description || null,
-                    category_id: category_id || null,
-                }),
+            await runAction(btn, async () => {
+                await safeRequest(`/api/menu-items/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        price,
+                        description: description || null,
+                        category_id: category_id || null,
+                    }),
+                });
+                await loadMenu();
             });
-            await loadMenu();
         };
 
         window.updateUserRole = async (id, role) => {
-            await apiFetch(`/api/users/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role }),
+            await runAction(null, async () => {
+                await safeRequest(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role }),
+                });
+                await loadUsers();
             });
-            await loadUsers();
         };
 
         window.toggleUserActive = async (id, active) => {
-            await apiFetch(`/api/users/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ is_active: active }),
+            await runAction(null, async () => {
+                await safeRequest(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_active: active }),
+                });
+                await loadUsers();
             });
-            await loadUsers();
         };
 
         window.deleteUser = async (id) => {
             if (!confirm('Delete this user account?')) return;
-            await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
-            await loadUsers();
+            await runAction(null, async () => {
+                await safeRequest(`/api/users/${id}`, { method: 'DELETE' });
+                await loadUsers();
+            });
         };
 
         async function init() {
