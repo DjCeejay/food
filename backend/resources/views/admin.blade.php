@@ -362,6 +362,13 @@
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
+        const escapeAttr = (value = '') => String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
         const apiFetch = (url, options = {}) => {
             const headers = {
                 Accept: 'application/json',
@@ -461,37 +468,54 @@
         }
 
         function renderMenu(items) {
-            menuList.innerHTML = items.map(item => `
-                <div class="menu-card">
-                    <div class="menu-card-head">
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            ${item.image_url ? `<img class="thumb" src="${item.image_url}" alt="${item.name}">` : ''}
-                            <div>
-                                <p class="menu-card-title">${item.name}</p>
-                                <div class="menu-tags">
-                                    <span class="menu-pill">₦${Number(item.price).toLocaleString()}</span>
-                                    <span class="menu-pill">${item.category?.name || 'Uncategorized'}</span>
-                                    <span class="menu-pill ${item.is_sold_out ? 'sold' : 'active'}">${item.is_sold_out ? 'Sold Out' : 'Available'}</span>
+            const cards = items.map(item => {
+                const safeBarcode = escapeAttr(item.barcode || '');
+                const safeName = escapeAttr(item.name || '');
+                return `
+                    <div class="menu-card">
+                        <div class="menu-card-head">
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                ${item.image_url ? `<img class="thumb" src="${item.image_url}" alt="${item.name}">` : ''}
+                                <div>
+                                    <p class="menu-card-title">${item.name}</p>
+                                    <div class="menu-tags">
+                                        <span class="menu-pill">₦${Number(item.price).toLocaleString()}</span>
+                                        <span class="menu-pill">${item.category?.name || 'Uncategorized'}</span>
+                                        <span class="menu-pill ${item.is_sold_out ? 'sold' : 'active'}">${item.is_sold_out ? 'Sold Out' : 'Available'}</span>
+                                    </div>
                                 </div>
                             </div>
+                            <div class="menu-tags">
+                                <span class="menu-pill">Barcode: ${item.barcode || 'Not set'}</span>
+                                <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} data-action="copy" data-barcode="${safeBarcode}">Copy</button>
+                                <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} data-action="download" data-barcode="${safeBarcode}" data-name="${safeName}">Download</button>
+                                <button class="btn-ghost" onclick="regenBarcode(${item.id}, this)">Regenerate</button>
+                            </div>
                         </div>
-                        <div class="menu-tags">
-                            <span class="menu-pill">Barcode: ${item.barcode || 'Not set'}</span>
-                            <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="copyBarcode(${JSON.stringify(item.barcode || '')}, this)">Copy</button>
-                            <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="printBarcode(${JSON.stringify(item.barcode || '')}, ${JSON.stringify(item.name || '')})">Download</button>
-                            <button class="btn-ghost" onclick="regenBarcode(${item.id}, this)">Regenerate</button>
+                        <p class="menu-meta">${item.description || 'No description yet.'}</p>
+                        <div class="menu-actions">
+                            <button class="btn-ghost" onclick="toggleSoldOut(${item.id}, this)">${item.is_sold_out ? 'Mark Available' : 'Mark Sold Out'}</button>
+                            <button class="btn-ghost" onclick="editMenuItem(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')}, this)">Edit</button>
+                            <button class="btn-ghost" onclick="deleteMenuItem(${item.id}, this)">Delete</button>
                         </div>
                     </div>
-                    <p class="menu-meta">${item.description || 'No description yet.'}</p>
-                    <div class="menu-actions">
-                        <button class="btn-ghost" onclick="toggleSoldOut(${item.id}, this)">${item.is_sold_out ? 'Mark Available' : 'Mark Sold Out'}</button>
-                        <button class="btn-ghost" onclick="editMenuItem(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')}, this)">Edit</button>
-                        <button class="btn-ghost" onclick="deleteMenuItem(${item.id}, this)">Delete</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            });
+            menuList.innerHTML = cards.join('');
             statItems.textContent = items.length;
         }
+
+        menuList?.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const { action, barcode = '', name = '' } = btn.dataset;
+            if (action === 'copy') {
+                copyBarcode(barcode);
+            }
+            if (action === 'download') {
+                printBarcode(barcode, name);
+            }
+        });
 
         function renderOrders(orders) {
             let revenue = 0;
