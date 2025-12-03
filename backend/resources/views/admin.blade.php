@@ -133,6 +133,16 @@
         .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
         .frame-wrap { border: 1px solid var(--af-line); border-radius: 14px; overflow: hidden; box-shadow: var(--af-shadow); background: #fff; }
         iframe { width: 100%; height: 70vh; border: none; }
+        /* Admin menu cards */
+        .menu-card { border: 1px solid var(--af-line); border-radius: 16px; padding: 12px; background: #fff; box-shadow: 0 10px 24px rgba(0,0,0,0.04); display: grid; gap: 8px; }
+        .menu-card-head { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; flex-wrap:wrap; }
+        .menu-card-title { margin:0; font-size:16px; }
+        .menu-tags { display:flex; gap:6px; flex-wrap:wrap; }
+        .menu-pill { border: 1px solid var(--af-line); border-radius: 999px; padding: 4px 10px; font-size:12px; color: rgba(0,0,0,0.7); background:#fff; }
+        .menu-pill.sold { border-color:#fca5a5; color:#b91c1c; background:#fef2f2; }
+        .menu-pill.active { border-color:#bbf7d0; color:#166534; background:#f0fdf4; }
+        .menu-meta { font-size:13px; color: rgba(0,0,0,0.7); }
+        .menu-actions { display:flex; gap:6px; flex-wrap:wrap; }
         @media (max-width: 960px) {
             body { grid-template-columns: 1fr; }
             .sidebar { position: fixed; left: 0; top: 0; width: 260px; transform: translateX(-110%); z-index: 20; }
@@ -412,26 +422,27 @@
 
         function renderMenu(items) {
             menuList.innerHTML = items.map(item => `
-                <div class="item">
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        ${item.image_url ? `<img class="thumb" src="${item.image_url}" alt="${item.name}">` : ''}
-                        <div>
-                            <h4>${item.name}</h4>
-                            <div class="row">
-                                <span class="price">₦${Number(item.price).toLocaleString()}</span>
-                                <span class="pill">${item.category?.name || 'Uncategorized'}</span>
-                                <span class="pill" style="border-color:${item.is_sold_out ? '#fca5a5' : '#bbf7d0'};color:${item.is_sold_out ? '#b91c1c' : '#166534'}">
-                                    ${item.is_sold_out ? 'Sold Out' : 'Available'}
-                                </span>
-                            </div>
-                            <div class="row" style="gap:6px; margin-top:6px; flex-wrap:wrap;">
-                                <span class="pill">Barcode: ${item.barcode || 'Not set'}</span>
-                                <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="copyBarcode('${item.barcode || ''}')">Copy</button>
-                                <button class="btn-ghost" onclick="regenBarcode(${item.id})">Regenerate</button>
+                <div class="menu-card">
+                    <div class="menu-card-head">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            ${item.image_url ? `<img class="thumb" src="${item.image_url}" alt="${item.name}">` : ''}
+                            <div>
+                                <p class="menu-card-title">${item.name}</p>
+                                <div class="menu-tags">
+                                    <span class="menu-pill">₦${Number(item.price).toLocaleString()}</span>
+                                    <span class="menu-pill">${item.category?.name || 'Uncategorized'}</span>
+                                    <span class="menu-pill ${item.is_sold_out ? 'sold' : 'active'}">${item.is_sold_out ? 'Sold Out' : 'Available'}</span>
+                                </div>
                             </div>
                         </div>
+                        <div class="menu-tags">
+                            <span class="menu-pill">Barcode: ${item.barcode || 'Not set'}</span>
+                            <button class="btn-ghost" ${item.barcode ? '' : 'disabled'} onclick="copyBarcode('${item.barcode || ''}')">Copy</button>
+                            <button class="btn-ghost" onclick="regenBarcode(${item.id})">Regenerate</button>
+                        </div>
                     </div>
-                    <div class="row" style="gap:6px;">
+                    <p class="menu-meta">${item.description || 'No description yet.'}</p>
+                    <div class="menu-actions">
                         <button class="btn-ghost" onclick="toggleSoldOut(${item.id})">${item.is_sold_out ? 'Mark Available' : 'Mark Sold Out'}</button>
                         <button class="btn-ghost" onclick="editMenuItem(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})">Edit</button>
                         <button class="btn-ghost" onclick="deleteMenuItem(${item.id})">Delete</button>

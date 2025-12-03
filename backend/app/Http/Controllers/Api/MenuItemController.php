@@ -78,6 +78,11 @@ class MenuItemController extends Controller
             'sort_order' => 'integer|min:0',
         ]);
 
+        // Ensure every item keeps a barcode even if the incoming payload omitted it.
+        if (empty($data['barcode']) && empty($menuItem->barcode)) {
+            $data['barcode'] = MenuItem::generateBarcode();
+        }
+
         $priceChanged = array_key_exists('price', $data) && $data['price'] !== null && $data['price'] != $menuItem->price;
 
         if ($request->hasFile('image')) {
