@@ -383,6 +383,7 @@
         const posCustomerPhone = document.getElementById('posCustomerPhone');
         const posPaymentMethod = document.getElementById('posPaymentMethod');
         const posCheckoutBtn = document.getElementById('posCheckoutBtn');
+        const barcodeCache = {};
         let posCart = [];
         let lastLookup = null;
         let isInteracting = false;
@@ -510,6 +511,9 @@
             const cards = items.map(item => {
                 const safeBarcode = escapeAttr(item.barcode || '');
                 const safeName = escapeAttr(item.name || '');
+                if (item.barcode) {
+                    barcodeCache[item.barcode] = item;
+                }
                 return `
                     <div class="menu-card">
                         <div class="menu-card-head">
@@ -591,6 +595,13 @@
             try {
                 const res = await safeRequest('/api/menu-items');
                 const data = await res.json();
+                // Refresh barcode cache for instant lookups
+                Object.keys(barcodeCache).forEach(key => delete barcodeCache[key]);
+                data.forEach(item => {
+                    if (item.barcode) {
+                        barcodeCache[item.barcode] = item;
+                    }
+                });
                 renderMenu(data);
             } catch (e) {
                 console.error(e);
@@ -742,6 +753,30 @@
 
         async function lookupBarcode(barcode, { addToCartOnSuccess = false } = {}) {
             if (!barcode) return;
+
+            // Instant local cache hit (kept fresh by loadMenu)
+            if (barcodeCache[barcode]) {
+                const item = barcodeCache[barcode];
+                if (item.is_sold_out) {
+                    const msg = 'Item found but currently marked sold out.';
+                    showLookupError(msg);
+                    setPosStatus(msg, 'error');
+                    return;
+                }
+                showLookupResult(item);
+                if (addToCartOnSuccess) {
+                    addToPosCart(item);
+                    setPosStatus(`Added ${item.name}. Ready for next scan.`);
+                    if (posBarcodeInput) {
+                        posBarcodeInput.value = '';
+                        posBarcodeInput.focus();
+                    }
+                } else {
+                    setPosStatus('Found. Price pulled live; add to cart.');
+                }
+                return;
+            }
+
             if (posLookupInFlight) return;
             posLookupInFlight = true;
             setPosStatus('Looking up barcode...');
@@ -758,6 +793,7 @@
                     return;
                 }
                 const item = await res.json();
+                if (item.barcode) barcodeCache[item.barcode] = item;
                 showLookupResult(item);
                 if (addToCartOnSuccess) {
                     addToPosCart(item);
@@ -833,7 +869,7 @@
                 setPosStatus('Ready to scan.');
                 return;
             }
-            scanDebounce = setTimeout(() => lookupBarcode(code, { addToCartOnSuccess: true }), 180);
+            scanDebounce = setTimeout(() => lookupBarcode(code, { addToCartOnSuccess: true }), 50);
         });
 
         if (posCheckoutBtn) posCheckoutBtn.addEventListener('click', async () => {
