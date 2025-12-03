@@ -12,23 +12,30 @@
     <style>
         :root {
             --af-gold: #cc9933;
+            --af-brown: #523700;
             --af-ink: #0f0b05;
+            --af-cream: #f7f1e7;
             --af-line: rgba(15, 11, 5, 0.12);
+            --af-shadow: 0 12px 30px rgba(0,0,0,0.06);
         }
         * { box-sizing: border-box; }
         body {
             margin: 0;
             font-family: 'Manrope', system-ui, -apple-system, sans-serif;
             color: var(--af-ink);
-            background: #f8f5ef;
+            background:
+                radial-gradient(circle at 14% 18%, rgba(204,153,51,0.1), transparent 28%),
+                radial-gradient(circle at 88% 12%, rgba(82,55,0,0.08), transparent 22%),
+                var(--af-cream);
         }
         header {
             display: flex; align-items: center; justify-content: space-between;
             padding: 14px 18px; background: #fff; border-bottom: 1px solid var(--af-line);
             position: sticky; top:0; z-index: 10;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.05);
         }
         main { padding: 18px; display: grid; gap: 14px; max-width: 1200px; margin: 0 auto; }
-        .card { background:#fff; border:1px solid var(--af-line); border-radius:16px; padding:16px; box-shadow:0 10px 28px rgba(0,0,0,0.06); }
+        .card { background:#fff; border:1px solid var(--af-line); border-radius:16px; padding:16px; box-shadow:var(--af-shadow); }
         h1 { margin:0; font-size:22px; font-family:'Playfair Display', Georgia, serif; }
         label { font-size:13px; color:rgba(0,0,0,0.6); display:block; margin-bottom:6px; }
         input, select {
@@ -70,33 +77,43 @@
 
     <main>
         <div class="card">
-            <div class="grid">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
                 <div>
+                    <h1 style="margin-bottom:4px;">Quick POS</h1>
+                    <p class="muted" style="margin:0;">Scan, add, and print in under a second.</p>
+                </div>
+                <div style="border:1px solid var(--af-line); border-radius:12px; padding:10px 12px; background:#fff; min-width:180px; text-align:right;">
+                    <div class="muted" style="font-size:12px;">Cart total</div>
+                    <div style="font-weight:800; color:var(--af-brown); font-size:20px;" id="posCartTotal">₦0</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div style="border:1px solid var(--af-line); border-radius:14px; padding:12px; background:#fff;">
                     <label>Scan / Enter barcode</label>
                     <input id="posBarcodeInput" placeholder="Focus here and scan">
                     <div id="posScanStatus" class="muted status">Ready to scan.</div>
                     <div id="posLookupResult" style="margin-top:10px;"></div>
                 </div>
-                <div>
-                    <h1 style="margin-bottom:6px;">POS Cart</h1>
-                    <div id="posCartList" class="list"></div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:10px 12px; border:1px solid var(--af-line); border-radius:12px; background:#fff;">
-                        <strong>Total</strong>
-                        <strong id="posCartTotal">₦0</strong>
+                <div style="border:1px solid var(--af-line); border-radius:14px; padding:12px; background:#fff;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <h2 style="margin:0; font-size:18px;">Cart</h2>
+                        <span class="pill">Fast print</span>
                     </div>
+                    <div id="posCartList" class="list" style="margin-top:8px;"></div>
                 </div>
             </div>
 
             <div class="grid" style="margin-top:12px;">
-                <div>
+                <div style="border:1px solid var(--af-line); border-radius:14px; padding:12px; background:#fff;">
                     <label>Customer name (optional)</label>
                     <input id="posCustomerName" placeholder="Walk-in">
                 </div>
-                <div>
+                <div style="border:1px solid var(--af-line); border-radius:14px; padding:12px; background:#fff;">
                     <label>Customer phone</label>
                     <input id="posCustomerPhone" placeholder="080...">
                 </div>
-                <div>
+                <div style="border:1px solid var(--af-line); border-radius:14px; padding:12px; background:#fff;">
                     <label>Payment method</label>
                     <select id="posPaymentMethod">
                         <option value="cash">Cash</option>
@@ -107,7 +124,7 @@
                 </div>
             </div>
 
-            <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 <button class="btn-primary" id="posCheckoutBtn">Complete Sale & Print Receipt</button>
                 <div class="muted">Saves order with seller info and prints a receipt.</div>
             </div>

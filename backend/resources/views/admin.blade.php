@@ -263,29 +263,52 @@
 
             <section class="panel" data-section="orders">
                 <div class="card">
-                    <h2>Orders</h2>
-                    <p class="muted">Recent orders (sample data seeded).</p>
-                    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 12px;">
-                        <div id="ordersChart" style="flex:1; min-width:260px; background:#fff; border:1px solid var(--af-line); border-radius:12px; padding:10px;">
-                            <div class="muted" style="font-size:12px; margin-bottom:6px;">Revenue (last 7 days)</div>
-                            <div id="ordersChartBars" style="display:flex; align-items:flex-end; gap:8px; height:120px;"></div>
-                            <div id="ordersChartLabels" style="display:flex; gap:8px; justify-content:space-between; font-size:11px; color:rgba(0,0,0,0.6); margin-top:6px;"></div>
+                    <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+                        <div>
+                            <h2 style="margin:0 0 4px;">Orders</h2>
+                            <p class="muted" style="margin:0;">Today and recent sales. Seller is recorded per order.</p>
                         </div>
                         <button class="btn-ghost" id="purgeOrdersBtn" style="white-space:nowrap;">Delete test orders</button>
                     </div>
-                    <table id="ordersTable">
-                        <thead>
-                            <tr>
-                                <th>Code</th>
-                                <th>Seller</th>
-                                <th>Status</th>
-                                <th>Total</th>
-                                <th>Channel</th>
-                                <th>When</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+
+                    <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top:12px;">
+                        <div style="border:1px solid var(--af-line); border-radius:12px; padding:12px; background:#fff;">
+                            <div class="muted" style="font-size:12px; margin-bottom:6px;">Revenue (last 7 days)</div>
+                            <div id="ordersChart" >
+                                <div id="ordersChartBars" style="display:flex; align-items:flex-end; gap:8px; height:120px;"></div>
+                                <div id="ordersChartLabels" style="display:flex; gap:8px; justify-content:space-between; font-size:11px; color:rgba(0,0,0,0.6); margin-top:6px;"></div>
+                            </div>
+                        </div>
+                        <div style="border:1px solid var(--af-line); border-radius:12px; padding:12px; background:#fff;">
+                            <div class="muted" style="font-size:12px;">Snapshot</div>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-top:8px;">
+                                <div class="stat" style="margin:0; box-shadow:none; border-color:var(--af-line);">
+                                    <h3 id="statOrders">0</h3><span>Orders today</span>
+                                </div>
+                                <div class="stat" style="margin:0; box-shadow:none; border-color:var(--af-line);">
+                                    <h3 id="statRevenue">₦0</h3><span>Revenue today</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="frame-wrap" style="margin-top:12px; border-color:var(--af-line); box-shadow:none;">
+                        <div style="overflow:auto; max-height:420px;">
+                            <table id="ordersTable" style="margin:0;">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Seller</th>
+                                        <th>Status</th>
+                                        <th>Total</th>
+                                        <th>Channel</th>
+                                        <th>When</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </section>
 
