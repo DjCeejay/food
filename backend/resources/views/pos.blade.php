@@ -115,7 +115,8 @@
     </main>
 
     <script>
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
 
         const posBarcodeInput = document.getElementById('posBarcodeInput');
         const posLookupResult = document.getElementById('posLookupResult');
@@ -151,7 +152,7 @@
                 let message = `Request failed (${res.status})`;
                 try {
                     const data = await res.clone().json();
-                    if (data?.message) message = data.message;
+                    if (data && data.message) message = data.message;
                 } catch (err) {
                     const text = await res.text().catch(() => '');
                     if (text) message = text;
@@ -236,7 +237,7 @@
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
                         <span class="pill">Price: ₦${Number(item.price).toLocaleString()}</span>
                         <span class="pill">Barcode: ${item.barcode}</span>
-                        <span class="pill">${item.category?.name || 'Uncategorized'}</span>
+                        <span class="pill">${item.category && item.category.name ? item.category.name : 'Uncategorized'}</span>
                     </div>
                 </div>
             `;
@@ -282,11 +283,11 @@
                 setPosStatus('Lookup failed.', 'error');
             } finally {
                 lookupInFlight = false;
-                posBarcodeInput?.select();
+                if (posBarcodeInput) posBarcodeInput.select();
             }
         }
 
-        posBarcodeInput?.addEventListener('keydown', (e) => {
+        if (posBarcodeInput) posBarcodeInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const code = e.target.value.trim();
@@ -295,7 +296,7 @@
             }
         });
 
-        posBarcodeInput?.addEventListener('input', (e) => {
+        if (posBarcodeInput) posBarcodeInput.addEventListener('input', (e) => {
             const code = e.target.value.trim();
             clearTimeout(scanDebounce);
             if (!code) {
@@ -305,15 +306,15 @@
             scanDebounce = setTimeout(() => lookupBarcode(code, { addToCartOnSuccess: true }), 180);
         });
 
-        posCheckoutBtn?.addEventListener('click', async () => {
+        if (posCheckoutBtn) posCheckoutBtn.addEventListener('click', async () => {
             if (!posCart.length) {
                 alert('Cart is empty. Scan an item first.');
                 return;
             }
             const payload = {
                 channel: 'pos',
-                customer_name: posCustomerName?.value || null,
-                customer_phone: posCustomerPhone?.value || null,
+                customer_name: posCustomerName ? posCustomerName.value : null,
+                customer_phone: posCustomerPhone ? posCustomerPhone.value : null,
                 items: posCart.map(item => ({
                     menu_item_id: item.id,
                     quantity: item.qty,
@@ -321,7 +322,7 @@
                 })),
                 payment: {
                     amount: computePosTotal(),
-                    method: posPaymentMethod?.value || 'cash',
+                    method: posPaymentMethod ? posPaymentMethod.value : 'cash',
                     reference: `POS-${Date.now()}`,
                 },
             };
@@ -405,7 +406,7 @@
         }
 
         renderPosCart();
-        posBarcodeInput?.focus();
+        if (posBarcodeInput) posBarcodeInput.focus();
     </script>
 </body>
 </html>

@@ -389,7 +389,8 @@
             interactionTimeout = setTimeout(() => { isInteracting = false; }, 2000);
         };
 
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
 
         const escapeAttr = (value = '') => String(value)
             .replace(/&/g, '&amp;')
@@ -428,7 +429,7 @@
                 let message = `Request failed (${res.status})`;
                 try {
                     const data = await res.clone().json();
-                    if (data?.message) message = data.message;
+                    if (data && data.message) message = data.message;
                 } catch (err) {
                     const text = await res.text().catch(() => '');
                     if (text) message = text;
@@ -450,14 +451,16 @@
             }
         };
 
-        toggleSidebar?.addEventListener('click', () => {
-            if (window.innerWidth <= 960) {
-                sidebar.classList.toggle('open');
-            } else {
-                document.body.classList.toggle('collapsed');
-                sidebar.classList.toggle('collapsed');
-            }
-        });
+        if (toggleSidebar) {
+            toggleSidebar.addEventListener('click', () => {
+                if (window.innerWidth <= 960) {
+                    sidebar.classList.toggle('open');
+                } else {
+                    document.body.classList.toggle('collapsed');
+                    sidebar.classList.toggle('collapsed');
+                }
+            });
+        }
 
         function switchTab(tab) {
             navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -509,7 +512,7 @@
                                     <p class="menu-card-title">${item.name}</p>
                                     <div class="menu-tags">
                                         <span class="menu-pill">₦${Number(item.price).toLocaleString()}</span>
-                                        <span class="menu-pill">${item.category?.name || 'Uncategorized'}</span>
+                                    <span class="menu-pill">${item.category && item.category.name ? item.category.name : 'Uncategorized'}</span>
                                         <span class="menu-pill ${item.is_sold_out ? 'sold' : 'active'}">${item.is_sold_out ? 'Sold Out' : 'Available'}</span>
                                     </div>
                                 </div>
@@ -534,17 +537,19 @@
             statItems.textContent = items.length;
         }
 
-        menuList?.addEventListener('click', (e) => {
-            const btn = e.target.closest('button[data-action]');
-            if (!btn) return;
-            const { action, barcode = '', name = '' } = btn.dataset;
-            if (action === 'copy') {
-                copyBarcode(barcode);
-            }
-            if (action === 'download') {
-                printBarcode(barcode, name);
-            }
-        });
+        if (menuList) {
+            menuList.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const { action, barcode = '', name = '' } = btn.dataset;
+                if (action === 'copy') {
+                    copyBarcode(barcode);
+                }
+                if (action === 'download') {
+                    printBarcode(barcode, name);
+                }
+            });
+        }
 
         function renderOrders(orders) {
             let revenue = 0;
@@ -714,7 +719,7 @@
                     <div class="row" style="gap:6px; flex-wrap:wrap;">
                         <span class="pill">Price: ₦${Number(item.price).toLocaleString()}</span>
                         <span class="pill">Barcode: ${item.barcode}</span>
-                        <span class="pill">${item.category?.name || 'Uncategorized'}</span>
+                        <span class="pill">${item.category && item.category.name ? item.category.name : 'Uncategorized'}</span>
                     </div>
                     <button class="btn-primary" data-add-pos-item>Add to cart</button>
                 </div>
@@ -762,7 +767,7 @@
                 setPosStatus('Lookup failed.', 'error');
             } finally {
                 posLookupInFlight = false;
-                posBarcodeInput?.select();
+                if (posBarcodeInput) posBarcodeInput.select();
             }
         }
 
@@ -788,7 +793,7 @@
         menuForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = new FormData(menuForm);
-            if (form.get('image')?.size === 0) {
+            if (form.get('image') && form.get('image').size === 0) {
                 form.delete('image');
             }
             const submitBtn = menuForm.querySelector('button[type="submit"]');
@@ -799,13 +804,13 @@
             });
         });
 
-        posLookupResult?.addEventListener('click', (e) => {
+        if (posLookupResult) posLookupResult.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-add-pos-item]');
             if (!btn || !lastLookup) return;
             addToPosCart(lastLookup);
         });
 
-        posBarcodeInput?.addEventListener('keydown', (e) => {
+        if (posBarcodeInput) posBarcodeInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const code = e.target.value.trim();
@@ -814,7 +819,7 @@
             }
         });
 
-        posBarcodeInput?.addEventListener('input', (e) => {
+        if (posBarcodeInput) posBarcodeInput.addEventListener('input', (e) => {
             const code = e.target.value.trim();
             clearTimeout(scanDebounce);
             if (!code) {
@@ -824,15 +829,15 @@
             scanDebounce = setTimeout(() => lookupBarcode(code, { addToCartOnSuccess: true }), 180);
         });
 
-        posCheckoutBtn?.addEventListener('click', async () => {
+        if (posCheckoutBtn) posCheckoutBtn.addEventListener('click', async () => {
             if (!posCart.length) {
                 alert('Cart is empty. Scan an item first.');
                 return;
             }
             const payload = {
                 channel: 'pos',
-                customer_name: posCustomerName?.value || null,
-                customer_phone: posCustomerPhone?.value || null,
+                customer_name: posCustomerName ? posCustomerName.value : null,
+                customer_phone: posCustomerPhone ? posCustomerPhone.value : null,
                 items: posCart.map(item => ({
                     menu_item_id: item.id,
                     quantity: item.qty,
@@ -840,7 +845,7 @@
                 })),
                 payment: {
                     amount: computePosTotal(),
-                    method: posPaymentMethod?.value || 'cash',
+                    method: posPaymentMethod ? posPaymentMethod.value : 'cash',
                     reference: `POS-${Date.now()}`,
                 },
             };
@@ -939,7 +944,7 @@
             }
             const text = String(code);
             try {
-                if (navigator?.clipboard?.writeText) {
+                if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
                     await navigator.clipboard.writeText(text);
                     alert('Barcode copied to clipboard.');
                     return;
@@ -1078,7 +1083,7 @@
         async function init() {
             await checkHealth();
             renderPosCart();
-            posBarcodeInput?.focus();
+            if (posBarcodeInput) posBarcodeInput.focus();
             await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadUsers()]);
 
             // Live refresh every 8 seconds
