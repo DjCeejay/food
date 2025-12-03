@@ -395,7 +395,7 @@
                                 </tbody>
                             </table>
                             <p style="margin-top:12px;">Sold by: {{ auth()->user()->name ?? 'POS user' }}</p>
-                            <script>window.onload = function(){ window.print(); };</script>
+                            <script>window.onload = function(){ window.print(); };<\/script>
                         </body>
                     </html>
                 `);

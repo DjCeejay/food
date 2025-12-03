@@ -349,10 +349,17 @@
     </main>
 
     <script>
+    (function () {
+        try {
+        if (!window.fetch) {
+            alert('Your browser is too old to run the admin. Please use a modern browser.');
+            return;
+        }
+
         const sidebar = document.getElementById('sidebar');
         const toggleSidebar = document.getElementById('toggleSidebar');
-        const navBtns = document.querySelectorAll('.nav-btn');
-        const panels = document.querySelectorAll('.panel');
+        const navBtns = Array.from(document.querySelectorAll('.nav-btn'));
+        const panels = Array.from(document.querySelectorAll('.panel'));
 
         const categoryList = document.getElementById('categoryList');
         const categoryForm = document.getElementById('categoryForm');
@@ -904,7 +911,7 @@
                                 </tbody>
                             </table>
                             <p style="margin-top:12px;">Sold by: {{ auth()->user()->name ?? 'POS user' }}</p>
-                            <script>window.onload = function(){ window.print(); };</script>
+                            <script>window.onload = function(){ window.print(); };<\/script>
                         </body>
                     </html>
                 `);
@@ -1033,7 +1040,8 @@
                 alert('Invalid price');
                 return;
             }
-            const description = prompt('Description', item.description || '') ?? '';
+            const descriptionPrompt = prompt('Description', item.description || '');
+            const description = descriptionPrompt === null ? '' : descriptionPrompt;
             const category_id = prompt('Category ID (leave blank to unset)', item.category_id || '') || null;
             await runAction(btn, async () => {
                 await safeRequest(`/api/menu-items/${id}`, {
@@ -1100,6 +1108,11 @@
         }
 
         init();
+        } catch (err) {
+            console.error('Admin UI failed to init', err);
+            alert('The admin interface failed to load. Please refresh or use a modern browser.');
+        }
+    })();
     </script>
 </body>
 </html>
