@@ -420,6 +420,7 @@
         const posCheckoutBtn = document.getElementById('posCheckoutBtn');
         const barcodeCache = {};
         let menuCacheReady = false;
+        let lastSummary = null;
         let posCart = [];
         let lastLookup = null;
         let isInteracting = false;
@@ -617,6 +618,7 @@
 
         function renderSummary(summary) {
             if (summary) {
+                lastSummary = summary;
                 statOrders.textContent = summary.today_orders ?? 0;
                 statRevenue.textContent = '₦' + Number(summary.today_revenue || 0).toLocaleString();
                 renderChart(summary.series || []);
@@ -677,6 +679,11 @@
                 const payload = await res.json();
                 const data = payload.data || payload; // paginate or flat
                 renderOrders(data);
+                if (!lastSummary) {
+                    const fallbackRev = data.reduce((sum, o) => sum + Number(o.total || 0), 0);
+                    statOrders.textContent = data.length;
+                    statRevenue.textContent = '₦' + fallbackRev.toLocaleString();
+                }
             } catch (e) {
                 console.error(e);
                 ordersTableBody.innerHTML = '<tr><td colspan="6">Could not load orders.</td></tr>';
@@ -980,6 +987,7 @@
                     posBarcodeInput.value = '';
                     posBarcodeInput.focus();
                 }
+                await Promise.all([loadOrders(), loadOrderSummary()]);
             });
         });
 
@@ -1210,12 +1218,12 @@
             if (posBarcodeInput) posBarcodeInput.focus();
             await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadOrderSummary(), loadUsers()]);
 
-            // Live refresh every 8 seconds
+            // Live refresh
             const refresh = async () => {
                 if (isInteracting) return;
                 await Promise.all([loadCategories(), loadMenu(), loadOrders(), loadOrderSummary(), loadUsers()]);
             };
-            setInterval(refresh, 8000);
+            setInterval(refresh, 5000);
 
             // Pause refresh while typing or focusing inputs
             document.addEventListener('focusin', markInteracting);

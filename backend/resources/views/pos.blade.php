@@ -37,6 +37,8 @@
         main { padding: 18px; display: grid; gap: 14px; max-width: 1200px; margin: 0 auto; }
         .card { background:#fff; border:1px solid var(--af-line); border-radius:16px; padding:16px; box-shadow:var(--af-shadow); }
         h1 { margin:0; font-size:22px; font-family:'Playfair Display', Georgia, serif; }
+        .brand-title { font-family:'Playfair Display', Georgia, serif; font-size:18px; margin:0; }
+        .brand-tag { color: rgba(0,0,0,0.6); font-size:13px; margin:2px 0 0; }
         label { font-size:13px; color:rgba(0,0,0,0.6); display:block; margin-bottom:6px; }
         input, select {
             width:100%; padding:12px; border-radius:12px; border:1px solid var(--af-line);
@@ -65,8 +67,8 @@
         <div style="display:flex; align-items:center; gap:12px;">
             <img src="/assets/logo.png" alt="AFC" style="width:42px; height:42px; border-radius:12px; object-fit:contain;">
             <div>
-                <div style="font-weight:700;">POS · Acie Fraiche</div>
-                <div class="muted">Signed in as {{ auth()->user()->name ?? 'POS User' }}</div>
+                <p class="brand-title">POS · Acie Fraiche</p>
+                <p class="brand-tag">Signed in as {{ auth()->user()->name ?? 'POS User' }}</p>
             </div>
         </div>
         <form method="POST" action="{{ route('logout') }}">
