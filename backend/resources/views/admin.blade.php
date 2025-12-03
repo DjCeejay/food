@@ -810,7 +810,7 @@
         svg { width:100%; }
         @media print { body { background:#fff; } .sheet { box-shadow:none; border:1px solid #000; } }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\\/script>
 </head>
 <body>
     <div class="sheet">
@@ -826,7 +826,7 @@
             JsBarcode('#printBarcode', code, { format: 'code128', width: 2, height: 80, displayValue: true, fontSize: 14 });
             setTimeout(() => { window.focus(); window.print(); }, 200);
         };
-    </script>
+    <\\/script>
 </body>
 </html>`;
             popup.document.write(printable);
