@@ -301,6 +301,29 @@
                             <strong>Total</strong>
                             <strong id="posCartTotal">₦0</strong>
                         </div>
+                        <div style="margin-top:12px; display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                            <div style="display:grid; gap:6px;">
+                                <label style="font-size:13px; color:rgba(0,0,0,0.6);">Customer name (optional)</label>
+                                <input id="posCustomerName" placeholder="Walk-in" style="padding:10px; border-radius:12px; border:1px solid var(--af-line);" />
+                            </div>
+                            <div style="display:grid; gap:6px;">
+                                <label style="font-size:13px; color:rgba(0,0,0,0.6);">Customer phone</label>
+                                <input id="posCustomerPhone" placeholder="080..." style="padding:10px; border-radius:12px; border:1px solid var(--af-line);" />
+                            </div>
+                            <div style="display:grid; gap:6px;">
+                                <label style="font-size:13px; color:rgba(0,0,0,0.6);">Payment method</label>
+                                <select id="posPaymentMethod" style="padding:10px; border-radius:12px; border:1px solid var(--af-line);">
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                    <option value="transfer">Transfer</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn-primary" id="posCheckoutBtn">Complete Sale & Print Receipt</button>
+                            <small class="muted">Saves order with seller info and prints a receipt.</small>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -349,10 +372,16 @@
         const posScanStatus = document.getElementById('posScanStatus');
         const posCartList = document.getElementById('posCartList');
         const posCartTotal = document.getElementById('posCartTotal');
+        const posCustomerName = document.getElementById('posCustomerName');
+        const posCustomerPhone = document.getElementById('posCustomerPhone');
+        const posPaymentMethod = document.getElementById('posPaymentMethod');
+        const posCheckoutBtn = document.getElementById('posCheckoutBtn');
         let posCart = [];
         let lastLookup = null;
         let isInteracting = false;
         let interactionTimeout;
+        let posLookupInFlight = false;
+        let scanDebounce = null;
 
         const markInteracting = () => {
             isInteracting = true;
@@ -622,10 +651,9 @@
                 return;
             }
 
-            let total = 0;
+            const total = computePosTotal();
             posCartList.innerHTML = posCart.map((item, index) => {
                 const line = item.price * item.qty;
-                total += line;
                 return `
                     <div class="item" style="align-items:center;">
                         <div>
@@ -663,6 +691,10 @@
             renderPosCart();
         }
 
+        function computePosTotal() {
+            return posCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        }
+
         window.updatePosQty = (index, action) => {
             const item = posCart[index];
             if (!item) return;
@@ -696,8 +728,10 @@
             posLookupResult.innerHTML = `<div class="muted">${message}</div>`;
         }
 
-        async function lookupBarcode(barcode) {
+        async function lookupBarcode(barcode, { addToCartOnSuccess = false } = {}) {
             if (!barcode) return;
+            if (posLookupInFlight) return;
+            posLookupInFlight = true;
             setPosStatus('Looking up barcode...');
             try {
                 const res = await apiFetch(`/api/menu-items/lookup?barcode=${encodeURIComponent(barcode)}`);
@@ -713,11 +747,21 @@
                 }
                 const item = await res.json();
                 showLookupResult(item);
-                setPosStatus('Found. Price pulled live; add to cart.');
+                if (addToCartOnSuccess) {
+                    addToPosCart(item);
+                    setPosStatus(`Added ${item.name}. Ready for next scan.`);
+                    if (posBarcodeInput) {
+                        posBarcodeInput.value = '';
+                        posBarcodeInput.focus();
+                    }
+                } else {
+                    setPosStatus('Found. Price pulled live; add to cart.');
+                }
             } catch (e) {
                 showLookupError('Lookup failed. Check connection.');
                 setPosStatus('Lookup failed.', 'error');
             } finally {
+                posLookupInFlight = false;
                 posBarcodeInput?.select();
             }
         }
@@ -766,9 +810,104 @@
                 e.preventDefault();
                 const code = e.target.value.trim();
                 if (!code) return;
-                lookupBarcode(code);
+                lookupBarcode(code, { addToCartOnSuccess: true });
             }
         });
+
+        posBarcodeInput?.addEventListener('input', (e) => {
+            const code = e.target.value.trim();
+            clearTimeout(scanDebounce);
+            if (!code) {
+                setPosStatus('Ready to scan.');
+                return;
+            }
+            scanDebounce = setTimeout(() => lookupBarcode(code, { addToCartOnSuccess: true }), 180);
+        });
+
+        posCheckoutBtn?.addEventListener('click', async () => {
+            if (!posCart.length) {
+                alert('Cart is empty. Scan an item first.');
+                return;
+            }
+            const payload = {
+                channel: 'pos',
+                customer_name: posCustomerName?.value || null,
+                customer_phone: posCustomerPhone?.value || null,
+                items: posCart.map(item => ({
+                    menu_item_id: item.id,
+                    quantity: item.qty,
+                    price: item.price,
+                })),
+                payment: {
+                    amount: computePosTotal(),
+                    method: posPaymentMethod?.value || 'cash',
+                    reference: `POS-${Date.now()}`,
+                },
+            };
+
+            await runAction(posCheckoutBtn, async () => {
+                const res = await safeRequest('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const order = await res.json();
+                alert(`Sale recorded. Order code: ${order.code || 'pending'}.`);
+                openPosReceipt(order);
+                posCart = [];
+                renderPosCart();
+                if (posBarcodeInput) {
+                    posBarcodeInput.value = '';
+                    posBarcodeInput.focus();
+                }
+            });
+        });
+
+        function openPosReceipt(order) {
+            try {
+                const receiptWindow = window.open('', 'pos-receipt');
+                if (!receiptWindow) return;
+                const itemsHtml = (order.items || []).map(item => `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td style="text-align:center;">${item.quantity}</td>
+                        <td style="text-align:right;">₦${Number(item.unit_price || item.price || 0).toLocaleString()}</td>
+                        <td style="text-align:right;">₦${Number(item.total || item.unit_price * item.quantity || 0).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+                receiptWindow.document.write(`
+                    <html>
+                        <head><title>Receipt ${order.code || ''}</title></head>
+                        <body style="font-family: Arial, sans-serif; padding:16px;">
+                            <h2 style="margin:0 0 8px;">Acie Fraiche Cafe</h2>
+                            <div style="margin-bottom:10px;">Order Code: <strong>${order.code || ''}</strong></div>
+                            <table style="width:100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align:left; border-bottom:1px solid #ddd;">Item</th>
+                                        <th style="text-align:center; border-bottom:1px solid #ddd;">Qty</th>
+                                        <th style="text-align:right; border-bottom:1px solid #ddd;">Price</th>
+                                        <th style="text-align:right; border-bottom:1px solid #ddd;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsHtml}
+                                    <tr>
+                                        <td colspan="3" style="text-align:right; border-top:1px solid #ddd;">Total</td>
+                                        <td style="text-align:right; border-top:1px solid #ddd;">₦${Number(order.total || 0).toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p style="margin-top:12px;">Sold by: {{ auth()->user()->name ?? 'POS user' }}</p>
+                            <script>window.onload = function(){ window.print(); };</script>
+                        </body>
+                    </html>
+                `);
+                receiptWindow.document.close();
+            } catch (e) {
+                console.error('Could not open receipt', e);
+            }
+        }
 
         window.toggleSoldOut = async (id, btn) => {
             await runAction(btn, async () => {
