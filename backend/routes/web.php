@@ -49,6 +49,8 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
     Route::view('/admin', 'admin')->middleware(['active', 'role:admin'])->name('admin');
+    Route::view('/pos', 'pos')->middleware(['active', 'role:admin|pos'])->name('pos');
+    Route::view('/kitchen', 'kitchen')->middleware(['active', 'role:admin|kitchen'])->name('kitchen');
     Route::get('/profile', [ProfileController::class, 'edit'])->middleware('active')->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->middleware('active')->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->middleware('active')->name('profile.destroy');

@@ -45,6 +45,14 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('admin');
         }
 
+        if ($user->hasRole('pos')) {
+            return redirect()->route('pos');
+        }
+
+        if ($user->hasRole('kitchen')) {
+            return redirect()->route('kitchen');
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 
