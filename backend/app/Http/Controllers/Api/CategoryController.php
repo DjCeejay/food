@@ -4,19 +4,25 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Category::orderBy('sort_order')->orderBy('name');
+        try {
+            $query = Category::orderBy('sort_order')->orderBy('name');
 
-        if ($request->boolean('active_only', false)) {
-            $query->where('is_active', true);
+            if ($request->boolean('active_only', false)) {
+                $query->where('is_active', true);
+            }
+
+            return $query->get();
+        } catch (QueryException $e) {
+            report($e);
+            return response()->json(['message' => 'Categories unavailable (database not ready).'], 503);
         }
-
-        return $query->get();
     }
 
     public function store(Request $request)

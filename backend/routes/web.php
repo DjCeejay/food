@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Models\Category;
 use App\Models\MenuItem;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Route;
 
 // Serve static assets directly
@@ -12,6 +13,11 @@ Route::get('/styles.css', function () {
 
 Route::get('/script.js', function () {
     return response()->file(public_path('script.js'), ['Content-Type' => 'application/javascript']);
+});
+
+// Admin preview of the public site
+Route::get('/live.html', function () {
+    return response()->file(public_path('live.html'), ['Content-Type' => 'text/html']);
 });
 
 Route::get('/assets/{file}', function ($file) {
@@ -32,13 +38,21 @@ Route::get('/assets/{file}', function ($file) {
 })->where('file', '.*');
 
 Route::get('/', function () {
-    $categories = Category::orderBy('sort_order')->orderBy('name')->get();
-    $menuItems = MenuItem::with('category')
-        ->where('is_active', true)
-        ->orderBy('sort_order')
-        ->orderBy('name')
-        ->get();
-    $featured = $menuItems->take(3);
+    try {
+        $categories = Category::orderBy('sort_order')->orderBy('name')->get();
+        $menuItems = MenuItem::with('category')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+        $featured = $menuItems->take(3);
+    } catch (QueryException $e) {
+        // When migrations haven't run yet, keep the site up with empty data.
+        report($e);
+        $categories = collect();
+        $menuItems = collect();
+        $featured = collect();
+    }
 
     return view('home', compact('categories', 'menuItems', 'featured'));
 });

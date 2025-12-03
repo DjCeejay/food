@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\MenuItem;
 use App\Models\PriceHistory;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -13,19 +14,24 @@ class MenuItemController extends Controller
 {
     public function index(Request $request)
     {
-        $query = MenuItem::with('category')
-            ->orderBy('sort_order')
-            ->orderBy('name');
+        try {
+            $query = MenuItem::with('category')
+                ->orderBy('sort_order')
+                ->orderBy('name');
 
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->input('category_id'));
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->input('category_id'));
+            }
+
+            if ($request->boolean('active_only', false)) {
+                $query->where('is_active', true);
+            }
+
+            return $query->get();
+        } catch (QueryException $e) {
+            report($e);
+            return response()->json(['message' => 'Menu items unavailable (database not ready).'], 503);
         }
-
-        if ($request->boolean('active_only', false)) {
-            $query->where('is_active', true);
-        }
-
-        return $query->get();
     }
 
     public function store(Request $request)
@@ -115,9 +121,14 @@ class MenuItemController extends Controller
             'barcode' => 'required|string',
         ]);
 
-        $item = MenuItem::with('category')
-            ->where('barcode', $data['barcode'])
-            ->first();
+        try {
+            $item = MenuItem::with('category')
+                ->where('barcode', $data['barcode'])
+                ->first();
+        } catch (QueryException $e) {
+            report($e);
+            return response()->json(['message' => 'Menu lookup unavailable (database not ready).'], 503);
+        }
 
         if (! $item) {
             return response()->json(['message' => 'Item not found'], 404);
