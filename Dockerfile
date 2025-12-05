@@ -25,6 +25,15 @@ COPY backend /app/backend
 RUN mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache \
  && chmod -R 777 storage bootstrap/cache
 
+# Safe defaults so package discovery/broadcasting won't fail during build
+ENV BROADCAST_CONNECTION=log \
+    REVERB_APP_KEY=placeholder-key \
+    REVERB_APP_SECRET=placeholder-secret \
+    REVERB_APP_ID=placeholder-id \
+    REVERB_HOST=localhost \
+    REVERB_PORT=443 \
+    REVERB_SCHEME=https
+
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Install PHP deps
