@@ -92,7 +92,7 @@
           <p>Modern takes on familiar comfort, layered with bold, memorable flavors.</p>
         </div>
 
-        <div class="af-grid af-grid-3 af-cards">
+        <div class="af-grid af-grid-3 af-cards" id="featuredGrid">
           @php $fallbackImage = asset('assets/meal-1.jpg'); @endphp
           @forelse ($featured as $item)
             @php $isSoldOut = $item->is_sold_out; @endphp
@@ -147,8 +147,8 @@
           <p>Choose your craving; we will prepare it hot and have it ready in minutes.</p>
         </div>
 
-        <div class="af-menu-panel">
-          <div class="af-menu-filters">
+          <div class="af-menu-panel">
+          <div class="af-menu-filters" id="menuFilters">
             <button class="af-chip af-chip-active" data-filter="all">All</button>
             @foreach ($categories as $category)
               <button class="af-chip" data-filter="{{ Str::slug($category->name) }}">{{ $category->name }}</button>

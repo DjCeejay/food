@@ -423,23 +423,32 @@ async function loadMenuData() {
       fetch("/api/categories?active_only=1", { cache: "no-store" })
     ]);
 
-    if (!itemsRes.ok || !categoriesRes.ok) {
-      throw new Error("Could not load menu data.");
-    }
+  if (!itemsRes.ok || !categoriesRes.ok) {
+    throw new Error("Could not load menu data.");
+  }
 
-    const [items, categories] = await Promise.all([
-      itemsRes.json(),
-      categoriesRes.json()
-    ]);
+  const [items, categories] = await Promise.all([
+    itemsRes.json(),
+    categoriesRes.json()
+  ]);
 
-    renderFilters(categories || []);
-    renderMenu(items || []);
-    renderFeatured(items || []);
-  } catch (err) {
-    if (featuredGrid) {
-      featuredGrid.innerHTML =
-        '<p style="grid-column:1/-1;text-align:center;">Unable to load menu right now.</p>';
-    }
+  const safeItems = Array.isArray(items) ? items : [];
+  const safeCategories = Array.isArray(categories) ? categories : [];
+
+  if (safeCategories.length && menuFilters) {
+    renderFilters(safeCategories);
+  }
+
+  // Only re-render grids when we have data; otherwise keep server-rendered HTML.
+  if (safeItems.length) {
+    renderMenu(safeItems);
+    renderFeatured(safeItems);
+  }
+} catch (err) {
+  if (featuredGrid) {
+    featuredGrid.innerHTML =
+      '<p style="grid-column:1/-1;text-align:center;">Unable to load menu right now.</p>';
+  }
     if (menuGrid) {
       menuGrid.innerHTML =
         '<p style="grid-column:1/-1;text-align:center;">Unable to load menu right now.</p>';
@@ -573,9 +582,10 @@ function handleWhatsApp(form) {
   window.open(url, "_blank");
 }
 
-// Initial bindings without re-rendering server HTML
+// Kick off bindings and a gentle refresh: load once, then only sold-out polling
 bindFilterButtons();
 bindAddToCartButtons();
+loadMenuData(); // fetch once on load to ensure data present
 syncMenuAvailability();
 setInterval(syncMenuAvailability, 10000);
 
