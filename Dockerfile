@@ -33,7 +33,7 @@ RUN mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache \
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV APP_BASE_PATH=/app/backend
 ENV APP_ENV=production
-ENV APP_KEY=base64:placeholderbuildkey000000000000000000000000000000000000000
+ENV APP_KEY=base64:zI8Ry0Ry9oZ01Iw3ZsUBSocwMMwicmjp/IuFvHtvsKo=
 ENV APP_URL=https://afc.com.ng
 
 # Install PHP deps
