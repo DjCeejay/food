@@ -82,7 +82,7 @@ async function syncMenuAvailability() {
 
 if (window.Echo) {
   window.Echo.channel("menu-items").listen(".menu-item.updated", (event) => {
-    setSoldOutState(event.id, !!event.is_sold_out);
+    upsertMenuItem(event);
   });
 }
 
@@ -455,6 +455,88 @@ async function loadMenuData() {
     }
     console.error(err);
   }
+}
+
+function ensureCategoryChip(catName) {
+  if (!menuFilters || !catName) return;
+  const slug = slugify(catName);
+  const existing = menuFilters.querySelector(`[data-filter="${slug}"]`);
+  if (existing) return;
+  const btn = document.createElement("button");
+  btn.className = "af-chip";
+  btn.setAttribute("data-filter", slug);
+  btn.textContent = catName;
+  menuFilters.appendChild(btn);
+  bindFilterButtons();
+}
+
+function createMenuCard(item) {
+  const catName = item.category?.name || "Menu";
+  const catSlug = slugify(catName);
+  const soldOut = item.is_sold_out ? "1" : "0";
+  const card = document.createElement("article");
+  card.className = "af-menu-item";
+  card.setAttribute("data-menu-item", "");
+  card.setAttribute("data-item-id", item.id);
+  card.setAttribute("data-sold-out", soldOut);
+  card.setAttribute("data-category", catSlug);
+  card.innerHTML = `
+    <div class="af-menu-head">
+      <h3>${item.name}</h3>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span class="af-pill">${catName}</span>
+        <span
+          class="af-pill"
+          data-soldout-pill
+          style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;${item.is_sold_out ? "" : "display:none;"}"
+        >Sold Out</span>
+      </div>
+    </div>
+    <p>${item.description || "Freshly prepared from our kitchen."}</p>
+    <div class="af-menu-footer">
+      <span class="af-price">₦${Number(item.price).toLocaleString()}</span>
+      <button
+        class="af-btn af-btn-sm af-btn-outline"
+        data-item="${item.name}"
+        data-item-id="${item.id}"
+        data-item-price="${item.price}"
+        data-sold-out="${soldOut}"
+        ${item.is_sold_out ? "disabled" : ""}
+      >
+        ${item.is_sold_out ? "Sold Out" : "Add to Cart"}
+      </button>
+    </div>
+  `;
+  return card;
+}
+
+function upsertMenuItem(item) {
+  if (!item || item.is_active === false) {
+    return;
+  }
+  const existing = document.querySelector(`[data-menu-item][data-item-id="${item.id}"]`);
+  if (existing) {
+    existing.querySelector(".af-menu-head h3").textContent = item.name;
+    const priceEl = existing.querySelector(".af-price");
+    if (priceEl) priceEl.textContent = `₦${Number(item.price).toLocaleString()}`;
+    existing.setAttribute("data-sold-out", item.is_sold_out ? "1" : "0");
+    const pill = existing.querySelector("[data-soldout-pill]");
+    if (pill) pill.style.display = item.is_sold_out ? "inline-flex" : "none";
+    const btn = existing.querySelector("[data-item]");
+    if (btn) {
+      btn.setAttribute("data-sold-out", item.is_sold_out ? "1" : "0");
+      btn.disabled = !!item.is_sold_out;
+      btn.textContent = item.is_sold_out ? "Sold Out" : "Add to Cart";
+      btn.setAttribute("data-item-price", item.price ?? 0);
+    }
+  } else if (menuGrid) {
+    const card = createMenuCard(item);
+    menuGrid.appendChild(card);
+    ensureCategoryChip(item.category?.name);
+    bindAddToCartButtons();
+    applyFilter();
+  }
+  setSoldOutState(item.id, !!item.is_sold_out);
 }
 
 // Checkout buttons

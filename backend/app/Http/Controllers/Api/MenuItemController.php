@@ -66,7 +66,10 @@ class MenuItemController extends Controller
             'changed_by' => $request->user()->email ?? 'system',
         ]);
 
-        return response()->json($item->load('category'), 201);
+        $item->load('category');
+        broadcast(new MenuItemUpdated($item));
+
+        return response()->json($item, 201);
     }
 
     public function update(Request $request, MenuItem $menuItem)

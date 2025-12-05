@@ -37,6 +37,9 @@ class MenuItemUpdated implements ShouldBroadcastNow
             'id' => $this->menuItem->id,
             'name' => $this->menuItem->name,
             'price' => (float) $this->menuItem->price,
+            'description' => $this->menuItem->description,
+            'image_url' => $this->menuItem->image_url,
+            'is_active' => (bool) $this->menuItem->is_active,
             'is_sold_out' => (bool) $this->menuItem->is_sold_out,
             'category' => $this->menuItem->category ? [
                 'id' => $this->menuItem->category->id,
