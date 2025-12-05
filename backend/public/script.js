@@ -573,13 +573,10 @@ function handleWhatsApp(form) {
   window.open(url, "_blank");
 }
 
-// Kick off dynamic menu load
-loadMenuData();
+// Initial bindings without re-rendering server HTML
 bindFilterButtons();
+bindAddToCartButtons();
 syncMenuAvailability();
-
-// Periodic refresh to keep menu/categories live without reload
-setInterval(loadMenuData, 15000);
 setInterval(syncMenuAvailability, 10000);
 
 // Attach checkout handlers for all buttons
