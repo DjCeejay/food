@@ -3,13 +3,13 @@ FROM php:8.3-cli-bullseye
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# System deps + pgsql + gd + zip
+# System deps + pgsql + gd + zip + mbstring deps
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    git unzip zip curl libpq-dev libzip-dev \
+    git unzip zip curl libpq-dev libzip-dev libonig-dev \
     libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
- && docker-php-ext-install pdo_pgsql gd zip \
+ && docker-php-ext-install pdo_pgsql gd zip bcmath mbstring \
  && rm -rf /var/lib/apt/lists/*
 
 # Node 20
