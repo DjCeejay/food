@@ -7,6 +7,12 @@ const statCountEl = document.getElementById('kitchenStatCount');
 const statLastEl = document.getElementById('kitchenStatLast');
 const statTotalEl = document.getElementById('kitchenStatTotal');
 const toastEl = document.getElementById('kitchenToast');
+const soundBtn = document.getElementById('toggleSound');
+const notifyBtn = document.getElementById('toggleNotify');
+
+let soundEnabled = localStorage.getItem('kitchenSound') === '1';
+let notifyEnabled = localStorage.getItem('kitchenNotify') === '1';
+const chime = new Audio('data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=');
 
 if (ordersEl) {
     const money = (value) => '₦' + Number(value ?? 0).toLocaleString();
@@ -27,6 +33,7 @@ if (ordersEl) {
         channel.listen('.order.created', (event) => {
             upsertOrder(normalizeOrder(event));
             showToast(`New order ${event.code ?? ''}`.trim() || 'New order received');
+            notifyNewOrder(event);
         });
 
         if (typeof channel.error === 'function') {
@@ -44,6 +51,29 @@ if (ordersEl) {
         }
     } else {
         setConnection('Echo not configured', false);
+    }
+
+    if (soundBtn) {
+        const setSoundLabel = () => soundBtn.textContent = `Sound: ${soundEnabled ? 'On' : 'Off'}`;
+        setSoundLabel();
+        soundBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('kitchenSound', soundEnabled ? '1' : '0');
+            setSoundLabel();
+        });
+    }
+
+    if (notifyBtn) {
+        const setNotifyLabel = () => notifyBtn.textContent = `Browser Alerts: ${notifyEnabled ? 'On' : 'Off'}`;
+        setNotifyLabel();
+        notifyBtn.addEventListener('click', async () => {
+            if (!notifyEnabled && Notification?.permission === 'default') {
+                await Notification.requestPermission();
+            }
+            notifyEnabled = Notification?.permission === 'granted';
+            localStorage.setItem('kitchenNotify', notifyEnabled ? '1' : '0');
+            setNotifyLabel();
+        });
     }
 
     function normalizeOrder(order) {
@@ -94,7 +124,10 @@ if (ordersEl) {
                         <div class="order-header">
                             <div>
                                 <strong>${escapeHtml(order.code ?? 'New order')}</strong>
-                                <div class="small">${formatTime(order.created_at)} · ${escapeHtml(order.channel ?? 'pos')}</div>
+                                <div class="order-meta">
+                                    <span>${formatTime(order.created_at)} · ${escapeHtml(order.channel ?? 'pos')}</span>
+                                    <span class="pill warn" data-elapsed="${order.created_at}">${elapsed(order.created_at)}</span>
+                                </div>
                             </div>
                             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                                 <span class="badge">${escapeHtml(order.status ?? 'pending')}</span>
@@ -128,6 +161,17 @@ if (ordersEl) {
         });
     }
 
+    function elapsed(timestamp) {
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) return 'Just now';
+        const diff = Math.max(0, Date.now() - date.getTime());
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return `${mins}m ago`;
+        const hrs = Math.floor(mins / 60);
+        return `${hrs}h ${mins % 60}m`;
+    }
+
     function setConnection(label, ok) {
         if (!connectionEl) return;
         connectionEl.textContent = label;
@@ -144,4 +188,23 @@ if (ordersEl) {
             toastEl.style.display = 'none';
         }, 2600);
     }
+
+    function notifyNewOrder(event) {
+        if (soundEnabled && chime?.play) {
+            chime.currentTime = 0;
+            chime.play().catch(() => {});
+        }
+        if (notifyEnabled && Notification?.permission === 'granted') {
+            const title = event.code ? `New order ${event.code}` : 'New order received';
+            const body = (event.items || []).map(i => `${i.quantity}× ${i.name}`).join(', ') || 'New ticket in the kitchen';
+            new Notification(title, { body, icon: '/assets/logo.png' });
+        }
+    }
+
+    // Refresh elapsed timers every 30s
+    setInterval(() => {
+        ordersEl.querySelectorAll('[data-elapsed]').forEach((pill) => {
+            pill.textContent = elapsed(pill.getAttribute('data-elapsed'));
+        });
+    }, 30000);
 }
