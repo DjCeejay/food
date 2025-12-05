@@ -7,16 +7,28 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? undefined;
 const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
+const reverbHost = import.meta.env.VITE_REVERB_HOST ?? window.location.hostname;
+const reverbPort = Number(import.meta.env.VITE_REVERB_PORT ?? 8080);
+const reverbScheme = import.meta.env.VITE_REVERB_SCHEME ?? 'https';
+
+// Expose config for diagnostics in the browser console
+window.reverbConfig = {
+    hasKey: !!reverbKey,
+    key: reverbKey,
+    host: reverbHost,
+    port: reverbPort,
+    scheme: reverbScheme,
+};
 
 if (reverbKey) {
     window.Pusher = Pusher;
     window.Echo = new Echo({
         broadcaster: 'reverb',
         key: reverbKey,
-        wsHost: import.meta.env.VITE_REVERB_HOST ?? window.location.hostname,
-        wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
-        wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+        wsHost: reverbHost,
+        wsPort: reverbPort,
+        wssPort: reverbPort,
+        forceTLS: reverbScheme === 'https',
         enabledTransports: ['ws', 'wss'],
         authEndpoint: '/broadcasting/auth',
         auth: {
@@ -25,4 +37,6 @@ if (reverbKey) {
             },
         },
     });
+} else {
+    console.error('Reverb/Echo disabled: VITE_REVERB_APP_KEY is missing at build time. Current config:', window.reverbConfig);
 }

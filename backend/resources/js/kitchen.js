@@ -39,7 +39,7 @@ if (ordersEl) {
         });
 
         if (typeof channel.error === 'function') {
-            channel.error((err) => setConnection(`Channel error: ${err?.message ?? 'unknown'}`, false));
+            channel.error((err) => setConnection(`Channel error: ${err?.message ?? err?.type ?? 'unknown'}`, false));
         }
 
         const connector = echo.connector?.pusher ?? echo.connector;
@@ -52,8 +52,9 @@ if (ordersEl) {
             setConnection('Live', true);
         }
     } else {
+        const cfg = window.reverbConfig || {};
         setConnection('Websockets disabled: missing VITE_REVERB_* build vars', false);
-        console.warn('Echo not initialized. Ensure VITE_REVERB_APP_KEY/HOST/PORT/SCHEME are set at build time and REVERB_* at runtime.');
+        console.warn('Echo not initialized. Ensure VITE_REVERB_APP_KEY/HOST/PORT/SCHEME are set at build time and REVERB_* at runtime.', cfg);
     }
 
     if (soundBtn) {
