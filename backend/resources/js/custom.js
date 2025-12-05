@@ -47,6 +47,49 @@ function closeCartOverlay() {
   document.body.classList.remove("af-modal-open");
 }
 
+function setSoldOutState(itemId, isSoldOut) {
+  const soldOut = isSoldOut ? "1" : "0";
+
+  document
+    .querySelectorAll(`[data-item-id="${itemId}"]`)
+    .forEach((btn) => {
+      btn.setAttribute("data-sold-out", soldOut);
+      btn.disabled = isSoldOut;
+      btn.textContent = isSoldOut ? "Sold Out" : "Add to Cart";
+    });
+
+  document
+    .querySelectorAll(`[data-menu-item][data-item-id="${itemId}"]`)
+    .forEach((card) => {
+      card.setAttribute("data-sold-out", soldOut);
+      const pill = card.querySelector("[data-soldout-pill]");
+      if (pill) pill.style.display = isSoldOut ? "inline-flex" : "none";
+    });
+}
+
+async function syncMenuAvailability() {
+  try {
+    const response = await fetch("/api/menu-items?active_only=1");
+    if (!response.ok) return;
+    const items = await response.json();
+    if (!Array.isArray(items)) return;
+    items.forEach((item) => {
+      setSoldOutState(item.id, !!item.is_sold_out);
+    });
+  } catch (error) {
+    // Silence network errors; polling will retry.
+  }
+}
+
+if (window.Echo) {
+  window.Echo.channel("menu-items").listen(".menu-item.updated", (event) => {
+    setSoldOutState(event.id, !!event.is_sold_out);
+  });
+}
+
+syncMenuAvailability();
+setInterval(syncMenuAvailability, 20000);
+
 function bumpCartFab() {
   if (!cartFab) return;
   cartFab.classList.remove("af-cart-fab-bump");

@@ -50,6 +50,42 @@ function closeCartOverlay() {
   document.body.classList.remove("af-modal-open");
 }
 
+function setSoldOutState(itemId, isSoldOut) {
+  const soldOut = isSoldOut ? "1" : "0";
+
+  document.querySelectorAll(`[data-item-id="${itemId}"]`).forEach((btn) => {
+    btn.setAttribute("data-sold-out", soldOut);
+    btn.disabled = isSoldOut;
+    btn.textContent = isSoldOut ? "Sold Out" : "Add to Cart";
+  });
+
+  document
+    .querySelectorAll(`[data-menu-item][data-item-id="${itemId}"]`)
+    .forEach((card) => {
+      card.setAttribute("data-sold-out", soldOut);
+      const pill = card.querySelector("[data-soldout-pill]");
+      if (pill) pill.style.display = isSoldOut ? "inline-flex" : "none";
+    });
+}
+
+async function syncMenuAvailability() {
+  try {
+    const res = await fetch("/api/menu-items?active_only=1", { cache: "no-store" });
+    if (!res.ok) return;
+    const items = await res.json();
+    if (!Array.isArray(items)) return;
+    items.forEach((item) => setSoldOutState(item.id, !!item.is_sold_out));
+  } catch (error) {
+    // network errors are ignored; next poll will retry
+  }
+}
+
+if (window.Echo) {
+  window.Echo.channel("menu-items").listen(".menu-item.updated", (event) => {
+    setSoldOutState(event.id, !!event.is_sold_out);
+  });
+}
+
 function bumpCartFab() {
   if (!cartFab) return;
   cartFab.classList.remove("af-cart-fab-bump");
@@ -273,18 +309,24 @@ function renderFeatured(items) {
     .map((item) => {
       const catName = item.category?.name || "Signature";
       return `
-        <article class="af-card" data-category="${slugify(catName)}">
+        <article
+          class="af-card"
+          data-menu-item
+          data-item-id="${item.id}"
+          data-sold-out="${item.is_sold_out ? "1" : "0"}"
+          data-category="${slugify(catName)}"
+        >
           <img src="${item.image_url || "assets/meal-1.jpg"}" alt="${item.name}" class="af-card-img" />
           <div class="af-card-body">
             <div class="af-card-top">
               <h3>${item.name}</h3>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <span class="af-tag">${catName}</span>
-                ${
-                  item.is_sold_out
-                    ? '<span class="af-pill" style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;">Sold Out</span>'
-                    : ""
-                }
+                <span
+                  class="af-pill"
+                  data-soldout-pill
+                  style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;${item.is_sold_out ? "" : "display:none;"}"
+                >Sold Out</span>
               </div>
             </div>
             <p>${item.description || "Fresh from our kitchen."}</p>
@@ -323,16 +365,22 @@ function renderMenu(items) {
       const catName = item.category?.name || "Menu";
       const catSlug = slugify(catName);
       return `
-        <article class="af-menu-item" data-category="${catSlug}">
+        <article
+          class="af-menu-item"
+          data-menu-item
+          data-item-id="${item.id}"
+          data-sold-out="${item.is_sold_out ? "1" : "0"}"
+          data-category="${catSlug}"
+        >
           <div class="af-menu-head">
             <h3>${item.name}</h3>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <span class="af-pill">${catName}</span>
-              ${
-                item.is_sold_out
-                  ? '<span class="af-pill" style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;">Sold Out</span>'
-                  : ""
-              }
+              <span
+                class="af-pill"
+                data-soldout-pill
+                style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;${item.is_sold_out ? "" : "display:none;"}"
+              >Sold Out</span>
             </div>
           </div>
           <p>${item.description || "Freshly prepared from our kitchen."}</p>
@@ -371,8 +419,8 @@ async function loadMenuData() {
   if (!menuGrid && !featuredGrid && !menuFilters) return;
   try {
     const [itemsRes, categoriesRes] = await Promise.all([
-      fetch("/api/menu-items?active_only=1"),
-      fetch("/api/categories?active_only=1")
+      fetch("/api/menu-items?active_only=1", { cache: "no-store" }),
+      fetch("/api/categories?active_only=1", { cache: "no-store" })
     ]);
 
     if (!itemsRes.ok || !categoriesRes.ok) {
@@ -528,9 +576,11 @@ function handleWhatsApp(form) {
 // Kick off dynamic menu load
 loadMenuData();
 bindFilterButtons();
+syncMenuAvailability();
 
 // Periodic refresh to keep menu/categories live without reload
 setInterval(loadMenuData, 15000);
+setInterval(syncMenuAvailability, 10000);
 
 // Attach checkout handlers for all buttons
 document.querySelectorAll("[data-paystack-btn]").forEach((btn) => {

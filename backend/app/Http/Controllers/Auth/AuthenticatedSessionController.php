@@ -51,9 +51,9 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('kitchen');
         }
         if ($user->hasRole('desk') || $role === 'desk') {
-            return redirect()->route('dashboard');
+            return redirect()->route('home');
         }
-        return redirect()->route('dashboard');
+        return redirect()->route('home');
     }
 
     /**

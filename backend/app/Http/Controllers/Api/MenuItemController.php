@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Events\MenuItemUpdated;
 use App\Models\MenuItem;
 use App\Models\PriceHistory;
 use Illuminate\Database\QueryException;
@@ -105,7 +106,10 @@ class MenuItemController extends Controller
             ]);
         }
 
-        return response()->json($menuItem->load('category'));
+        $menuItem->refresh()->load('category');
+        broadcast(new MenuItemUpdated($menuItem));
+
+        return response()->json($menuItem);
     }
 
     public function regenerateBarcode(MenuItem $menuItem)
@@ -144,6 +148,9 @@ class MenuItemController extends Controller
     public function toggleSoldOut(MenuItem $menuItem)
     {
         $menuItem->update(['is_sold_out' => ! $menuItem->is_sold_out]);
+
+        $menuItem->refresh()->load('category');
+        broadcast(new MenuItemUpdated($menuItem));
 
         return response()->json($menuItem);
     }

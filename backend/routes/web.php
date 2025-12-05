@@ -56,11 +56,7 @@ Route::get('/', function () {
     }
 
     return view('home', compact('categories', 'menuItems', 'featured'));
-});
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'active', 'verified'])->name('dashboard');
+})->name('home');
 
 Route::middleware('auth')->group(function () {
     Route::view('/admin', 'admin')->middleware(['active', 'role:admin'])->name('admin');

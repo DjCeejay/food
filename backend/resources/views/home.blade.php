@@ -96,16 +96,24 @@
           @php $fallbackImage = asset('assets/meal-1.jpg'); @endphp
           @forelse ($featured as $item)
             @php $isSoldOut = $item->is_sold_out; @endphp
-            <article class="af-card" data-category="{{ Str::slug(optional($item->category)->name ?? 'menu') }}">
+            <article
+              class="af-card"
+              data-menu-item
+              data-item-id="{{ $item->id }}"
+              data-sold-out="{{ $isSoldOut ? '1' : '0' }}"
+              data-category="{{ Str::slug(optional($item->category)->name ?? 'menu') }}"
+            >
               <img src="{{ $item->image_url ?: $fallbackImage }}" alt="{{ $item->name }}" class="af-card-img" />
               <div class="af-card-body">
                 <div class="af-card-top">
                   <h3>{{ $item->name }}</h3>
                   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                     <span class="af-tag">{{ optional($item->category)->name ?? 'Signature' }}</span>
-                    @if ($isSoldOut)
-                      <span class="af-pill" style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;">Sold Out</span>
-                    @endif
+                    <span
+                      class="af-pill"
+                      data-soldout-pill
+                      style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;{{ $isSoldOut ? '' : 'display:none;' }}"
+                    >Sold Out</span>
                   </div>
                 </div>
                 <p>{{ $item->description ?? 'Fresh from our kitchen.' }}</p>
@@ -153,14 +161,22 @@
                   $catSlug = Str::slug(optional($item->category)->name ?? 'menu');
                   $isSoldOut = $item->is_sold_out;
               @endphp
-              <article class="af-menu-item" data-category="{{ $catSlug }}">
+              <article
+                class="af-menu-item"
+                data-menu-item
+                data-item-id="{{ $item->id }}"
+                data-sold-out="{{ $isSoldOut ? '1' : '0' }}"
+                data-category="{{ $catSlug }}"
+              >
                 <div class="af-menu-head">
                   <h3>{{ $item->name }}</h3>
                   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                     <span class="af-pill">{{ optional($item->category)->name ?? 'Menu' }}</span>
-                    @if ($isSoldOut)
-                      <span class="af-pill" style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;">Sold Out</span>
-                    @endif
+                    <span
+                      class="af-pill"
+                      data-soldout-pill
+                      style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;{{ $isSoldOut ? '' : 'display:none;' }}"
+                    >Sold Out</span>
                   </div>
                 </div>
                 <p>{{ $item->description ?? 'Freshly prepared from our kitchen.' }}</p>

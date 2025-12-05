@@ -19,9 +19,9 @@ if (ordersEl) {
 
     renderOrders();
     updateStats();
-    setConnection('Echo not configured', false);
 
     if (window.Echo) {
+        setConnection('Connecting…', false);
         const channel = window.Echo.private('orders');
 
         channel.listen('.order.created', (event) => {
@@ -42,6 +42,8 @@ if (ordersEl) {
         } else {
             setConnection('Live', true);
         }
+    } else {
+        setConnection('Echo not configured', false);
     }
 
     function normalizeOrder(order) {
