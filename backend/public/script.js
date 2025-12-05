@@ -80,10 +80,37 @@ async function syncMenuAvailability() {
   }
 }
 
+// Initialize Echo for real-time updates
+function initializeEcho() {
+  if (!window.Pusher) {
+    // Load Pusher library dynamically
+    const script = document.createElement('script');
+    script.src = 'https://js.pusher.com/8.2.0/pusher.min.js';
+    script.onload = () => {
+      loadEcho();
+    };
+    document.head.appendChild(script);
+  } else {
+    loadEcho();
+  }
+}
+
+function loadEcho() {
+  if (window.Echo) {
+    window.Echo.channel("menu-items").listen(".menu-item.updated", (event) => {
+      upsertMenuItem(event);
+    });
+  }
+}
+
+// Try to initialize Echo if available
 if (window.Echo) {
   window.Echo.channel("menu-items").listen(".menu-item.updated", (event) => {
     upsertMenuItem(event);
   });
+} else {
+  // If Echo is not available, we'll rely on polling
+  console.log('Echo not available, using polling for menu updates');
 }
 
 function bumpCartFab() {
@@ -669,7 +696,8 @@ bindFilterButtons();
 applyFilter();
 bindAddToCartButtons();
 syncMenuAvailability();
-setInterval(syncMenuAvailability, 10000);
+// Reduced polling interval from 10s to 30s to prevent flickering
+setInterval(syncMenuAvailability, 30000);
 
 // Attach checkout handlers for all buttons
 document.querySelectorAll("[data-paystack-btn]").forEach((btn) => {

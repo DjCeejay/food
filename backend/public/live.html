@@ -12,6 +12,12 @@
     rel="stylesheet"
   />
   <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Reverb/Echo Configuration -->
+  <meta name="reverb-key" content="uncuuyrorqyj8wpk48zo" />
+  <meta name="reverb-host" content="afc.com.ng" />
+  <meta name="reverb-port" content="443" />
+  <meta name="reverb-scheme" content="https" />
 </head>
 <body>
   <header class="af-header">
@@ -311,6 +317,39 @@
       <span>© <span id="year"></span> Acie Fraiche Cafe. Freshly Crafted, Simply Delicious.</span>
     </div>
   </footer>
+
+  <!-- Load Pusher for WebSocket support -->
+  <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+  
+  <!-- Load Laravel Echo for real-time updates -->
+  <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.1/dist/echo.iife.js"></script>
+  
+  <!-- Initialize Echo with Reverb configuration -->
+  <script>
+    // Get Reverb configuration from meta tags or use defaults
+    const reverbKey = document.querySelector('meta[name="reverb-key"]')?.getAttribute('content') || 
+                      (window.location.hostname === 'localhost' ? 'local' : 'afc');
+    const reverbHost = document.querySelector('meta[name="reverb-host"]')?.getAttribute('content') || 
+                       window.location.hostname;
+    const reverbPort = parseInt(document.querySelector('meta[name="reverb-port"]')?.getAttribute('content') || '8080');
+    const reverbScheme = document.querySelector('meta[name="reverb-scheme"]')?.getAttribute('content') || 
+                         (window.location.protocol === 'https:' ? 'https' : 'http');
+
+    if (reverbKey && window.Echo) {
+      window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key: reverbKey,
+        wsHost: reverbHost,
+        wsPort: reverbPort,
+        wssPort: reverbPort,
+        forceTLS: reverbScheme === 'https',
+        enabledTransports: ['ws', 'wss'],
+      });
+      console.log('Echo initialized with Reverb:', { reverbKey, reverbHost, reverbPort, reverbScheme });
+    } else {
+      console.warn('Echo not initialized - missing key or library');
+    }
+  </script>
 
   <script src="script.js"></script>
 </body>
