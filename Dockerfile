@@ -35,6 +35,12 @@ ENV APP_BASE_PATH=/app/backend
 ENV APP_ENV=production
 ENV APP_KEY=base64:zI8Ry0Ry9oZ01Iw3ZsUBSocwMMwicmjp/IuFvHtvsKo=
 ENV APP_URL=https://afc.com.ng
+ENV REVERB_APP_ID=placeholder-id
+ENV REVERB_APP_KEY=placeholder-key
+ENV REVERB_APP_SECRET=placeholder-secret
+ENV REVERB_HOST=localhost
+ENV REVERB_PORT=443
+ENV REVERB_SCHEME=https
 
 # Install PHP deps
 RUN composer install --no-dev --prefer-dist --no-progress --no-interaction
