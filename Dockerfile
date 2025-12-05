@@ -1,58 +1,73 @@
 # syntax=docker/dockerfile:1
-FROM php:8.3-cli-bullseye
+
+# Builder: install PHP extensions, composer, node, and build assets
+FROM php:8.3-fpm-bullseye AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# System deps + pgsql + gd + zip + mbstring deps
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     git unzip zip curl libpq-dev libzip-dev libonig-dev \
     libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
  && docker-php-ext-install pdo_pgsql gd zip bcmath mbstring pcntl \
- && rm -rf /var/lib/apt/lists/*
-
-# Node 20
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
  && apt-get update && apt-get install -y --no-install-recommends nodejs \
+ && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
  && rm -rf /var/lib/apt/lists/*
-
-# Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 WORKDIR /app/backend
 
-# Copy app code (including views)
+# Copy app code
 COPY backend /app/backend
 
-# Ensure storage/bootstrap cache directories exist and are writable
+# Prepare writable dirs
 RUN mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache \
  && chmod -R 777 storage bootstrap/cache
 
-# Env for build
 ENV COMPOSER_ALLOW_SUPERUSER=1
-ENV APP_BASE_PATH=/app/backend
-ENV APP_ENV=production
-ENV APP_KEY=base64:zI8Ry0Ry9oZ01Iw3ZsUBSocwMMwicmjp/IuFvHtvsKo=
-ENV APP_URL=https://afc.com.ng
-ENV REVERB_APP_ID=placeholder-id
-ENV REVERB_APP_KEY=placeholder-key
-ENV REVERB_APP_SECRET=placeholder-secret
-ENV REVERB_HOST=localhost
-ENV REVERB_PORT=443
-ENV REVERB_SCHEME=https
 
 # Install PHP deps
 RUN composer install --no-dev --prefer-dist --no-progress --no-interaction
 
-# Install Node deps
-RUN npm ci --no-progress
+# Install Node deps and build assets
+RUN npm ci --omit=dev --no-progress \
+ && npm run build \
+ && rm -rf node_modules
 
-# Build assets and cache config/routes; ensure storage link
-RUN npm run build \
- && php -r "if (is_link('public/storage')) { unlink('public/storage'); }" \
- && php artisan storage:link
+# Runtime image: Nginx + PHP-FPM with Opcache
+FROM php:8.3-fpm-bullseye
 
-ENV PORT=8000
-EXPOSE 8000 8080
-CMD ["sh", "-c", "mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache resources/views && chmod -R 777 storage bootstrap/cache resources && php artisan config:clear && php artisan route:clear && php artisan config:cache && php artisan route:cache && php artisan migrate --force --seed && php artisan reverb:start --host=0.0.0.0 --port=${REVERB_SERVER_PORT:-8080} & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    nginx curl libpq-dev libzip-dev libonig-dev \
+    libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+ && docker-php-ext-configure gd --with-freetype --with-jpeg \
+ && docker-php-ext-install pdo_pgsql gd zip bcmath mbstring pcntl \
+ && rm -rf /var/lib/apt/lists/*
+
+# Nginx + PHP config
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/php-opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+
+WORKDIR /app/backend
+
+# Bring built app
+COPY --from=builder /app/backend /app/backend
+
+# Default envs (override in Render)
+ENV APP_ENV=production \
+    APP_URL=https://afc.com.ng \
+    PORT=80 \
+    REVERB_SERVER_PORT=8080
+
+EXPOSE 80 8080
+
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh \
+ && mkdir -p /var/log/nginx \
+ && chown -R www-data:www-data storage bootstrap/cache
+
+CMD ["/start.sh"]
