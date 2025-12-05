@@ -6,9 +6,9 @@ services:
     dockerContext: .
     autoDeploy: true
     envVars:
-      # Disable BuildKit if the builder doesn't ship buildx.
+      # Enable BuildKit/buildx on Render for faster builds.
       - key: DOCKER_BUILDKIT
-        value: "0"
+        value: "1"
       # Set this to your Render URL (e.g., https://food-app.onrender.com)
       - key: APP_URL
         value: https://your-domain

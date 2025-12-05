@@ -582,10 +582,10 @@ function handleWhatsApp(form) {
   window.open(url, "_blank");
 }
 
-// Kick off bindings and a gentle refresh: load once, then only sold-out polling
+// Kick off bindings and only sold-out polling (keep server-rendered grids)
 bindFilterButtons();
+applyFilter();
 bindAddToCartButtons();
-loadMenuData(); // fetch once on load to ensure data present
 syncMenuAvailability();
 setInterval(syncMenuAvailability, 10000);
 
