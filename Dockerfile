@@ -39,8 +39,8 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # Install PHP deps
 RUN composer install --no-dev --prefer-dist --no-progress --no-interaction
 
-# Install Node deps and build assets
-RUN npm ci --omit=dev --no-progress \
+# Install Node deps (with dev for build) and build assets, then clean node_modules
+RUN npm ci --no-progress \
  && npm run build \
  && rm -rf node_modules
 
