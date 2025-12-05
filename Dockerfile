@@ -9,7 +9,7 @@ RUN apt-get update \
     git unzip zip curl libpq-dev libzip-dev libonig-dev \
     libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
- && docker-php-ext-install pdo_pgsql gd zip bcmath mbstring \
+ && docker-php-ext-install pdo_pgsql gd zip bcmath mbstring pcntl \
  && rm -rf /var/lib/apt/lists/*
 
 # Node 20
