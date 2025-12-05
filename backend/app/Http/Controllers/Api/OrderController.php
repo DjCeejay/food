@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\OrderCreated;
 use App\Http\Controllers\Controller;
 use App\Models\MenuItem;
 use App\Models\Order;
@@ -112,6 +113,12 @@ class OrderController extends Controller
                     'paid_at' => now(),
                 ]);
             }
+
+            DB::afterCommit(function () use ($order) {
+                broadcast(new OrderCreated(
+                    $order->fresh(['items', 'payments', 'creator'])
+                ));
+            });
 
             return $order->load(['items', 'payments']);
         });
