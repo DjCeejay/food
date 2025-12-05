@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: food-app
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    envVars:
+      # Disable BuildKit if the builder doesn't ship buildx.
+      - key: DOCKER_BUILDKIT
+        value: "0"
+      # Set this to your Render URL (e.g., https://food-app.onrender.com)
+      - key: APP_URL
+        value: https://your-domain
+      # Re-use the production settings already baked into the image; override here if needed.
+      - key: APP_ENV
+        value: production
