@@ -18,7 +18,9 @@ php artisan migrate --force --seed || true
 
 # Start PHP-FPM and Reverb websocket server
 php-fpm -D
-php artisan reverb:start --host=0.0.0.0 --port="${REVERB_SERVER_PORT:-8080}" &
+# Run Reverb on the configured port (fall back to PORT, then 8080)
+REVERB_BIND_PORT="${REVERB_SERVER_PORT:-${PORT:-8080}}"
+php artisan reverb:start --host=0.0.0.0 --port="${REVERB_BIND_PORT}" &
 
 # Start Nginx in foreground
 nginx -g 'daemon off;'

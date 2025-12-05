@@ -26,9 +26,11 @@ if (ordersEl) {
     renderOrders();
     updateStats();
 
-    if (window.Echo) {
+    const echo = window.Echo;
+
+    if (echo) {
         setConnection('Connecting…', false);
-        const channel = window.Echo.private('orders');
+        const channel = echo.private('orders');
 
         channel.listen('.order.created', (event) => {
             upsertOrder(normalizeOrder(event));
@@ -37,20 +39,21 @@ if (ordersEl) {
         });
 
         if (typeof channel.error === 'function') {
-            channel.error(() => setConnection('Channel error', false));
+            channel.error((err) => setConnection(`Channel error: ${err?.message ?? 'unknown'}`, false));
         }
 
-        const connector = window.Echo.connector?.pusher ?? window.Echo.connector;
+        const connector = echo.connector?.pusher ?? echo.connector;
         const connection = connector?.connection;
         if (connection) {
             connection.bind('connected', () => setConnection('Live', true));
             connection.bind('disconnected', () => setConnection('Disconnected', false));
-            connection.bind('error', () => setConnection('Connection error', false));
+            connection.bind('error', (err) => setConnection(`Connection error${err?.type ? ': '+err.type : ''}`, false));
         } else {
             setConnection('Live', true);
         }
     } else {
-        setConnection('Echo not configured', false);
+        setConnection('Websockets disabled: missing VITE_REVERB_* build vars', false);
+        console.warn('Echo not initialized. Ensure VITE_REVERB_APP_KEY/HOST/PORT/SCHEME are set at build time and REVERB_* at runtime.');
     }
 
     if (soundBtn) {
