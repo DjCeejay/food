@@ -691,10 +691,11 @@ function handleWhatsApp(form) {
   window.open(url, "_blank");
 }
 
-// Kick off bindings and only sold-out polling (keep server-rendered grids)
+// Kick off bindings and load menu data
 bindFilterButtons();
 applyFilter();
 bindAddToCartButtons();
+loadMenuData();
 syncMenuAvailability();
 // Reduced polling interval from 10s to 30s to prevent flickering
 setInterval(syncMenuAvailability, 30000);
