@@ -55,4 +55,4 @@ RUN npm run build \
 
 ENV PORT=8000
 EXPOSE 8000 8080
-CMD ["sh", "-c", "mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache resources/views && chmod -R 777 storage bootstrap/cache resources && php artisan config:clear && php artisan route:clear && php artisan config:cache && php artisan route:cache && php artisan migrate --force --seed && php artisan reverb:serve --host=0.0.0.0 --port=${REVERB_SERVER_PORT:-8080} & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "mkdir -p storage/framework/{cache,data,sessions,views} bootstrap/cache resources/views && chmod -R 777 storage bootstrap/cache resources && php artisan config:clear && php artisan route:clear && php artisan config:cache && php artisan route:cache && php artisan migrate --force --seed && php artisan reverb:start --host=0.0.0.0 --port=${REVERB_SERVER_PORT:-8080} & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
