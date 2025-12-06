@@ -437,6 +437,7 @@ if (!hasSSRMenuItems) {
     setSoldOutState(item.id, !!item.is_sold_out);
   });
 }
+}
 
 function applyFilter() {
   if (!menuGrid) return;
