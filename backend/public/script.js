@@ -450,33 +450,44 @@ async function loadMenuData() {
       fetch("/api/categories?active_only=1", { cache: "no-store" })
     ]);
 
-  if (!itemsRes.ok || !categoriesRes.ok) {
-    throw new Error("Could not load menu data.");
-  }
+    if (!itemsRes.ok || !categoriesRes.ok) {
+      throw new Error("Could not load menu data.");
+    }
 
-  const [items, categories] = await Promise.all([
-    itemsRes.json(),
-    categoriesRes.json()
-  ]);
+    const [items, categories] = await Promise.all([
+      itemsRes.json(),
+      categoriesRes.json()
+    ]);
 
-  const safeItems = Array.isArray(items) ? items : [];
-  const safeCategories = Array.isArray(categories) ? categories : [];
+    const safeItems = Array.isArray(items) ? items : [];
+    const safeCategories = Array.isArray(categories) ? categories : [];
 
-  if (safeCategories.length && menuFilters) {
-    renderFilters(safeCategories);
-  }
+    if (safeCategories.length && menuFilters) {
+      if (!hasSSRFilters) {
+        renderFilters(safeCategories);
+      } else {
+        safeCategories.forEach((c) => ensureCategoryChip(c.name));
+      }
+    }
 
-  // Only re-render grids when we have data; otherwise keep server-rendered HTML.
-  if (safeItems.length) {
-    renderMenu(safeItems);
-    renderFeatured(safeItems);
-  }
-} catch (err) {
-  if (featuredGrid) {
-    featuredGrid.innerHTML =
-      '<p style="grid-column:1/-1;text-align:center;">Unable to load menu right now.</p>';
-  }
-    if (menuGrid) {
+    if (safeItems.length) {
+      if (!hasSSRMenuItems) {
+        renderMenu(safeItems);
+      } else {
+        safeItems.forEach((item) => upsertMenuItem(item));
+        applyFilter();
+      }
+
+      if (!hasSSRFeatured) {
+        renderFeatured(safeItems);
+      }
+    }
+  } catch (err) {
+    if (featuredGrid && !hasSSRFeatured) {
+      featuredGrid.innerHTML =
+        '<p style="grid-column:1/-1;text-align:center;">Unable to load menu right now.</p>';
+    }
+    if (menuGrid && !hasSSRMenuItems) {
       menuGrid.innerHTML =
         '<p style="grid-column:1/-1;text-align:center;">Unable to load menu right now.</p>';
     }
@@ -692,21 +703,15 @@ function handleWhatsApp(form) {
 }
 
 // Kick off bindings and load menu data (avoid double-render if server already rendered content)
-const hasSSRContent = !!(
-  (menuGrid && menuGrid.querySelector('[data-menu-item]')) ||
-  (featuredGrid && featuredGrid.querySelector('[data-menu-item]')) ||
-  (menuFilters && menuFilters.children.length > 0)
-);
+const hasSSRMenuItems = !!(menuGrid && menuGrid.querySelector("[data-menu-item]"));
+const hasSSRFeatured = !!(featuredGrid && featuredGrid.querySelector("[data-menu-item]"));
+const hasSSRFilters = !!(menuFilters && menuFilters.querySelectorAll(".af-chip").length > 1);
 
-if (hasSSRContent) {
-  // Server-rendered content present: just bind handlers and apply filter
-  bindAddToCartButtons();
-  bindFilterButtons();
-  applyFilter();
-} else {
-  // No server-rendered content: fetch and render dynamically
-  loadMenuData();
-}
+// Bind whatever the server already rendered for instant UX, then hydrate quietly from the API
+bindAddToCartButtons();
+bindFilterButtons();
+applyFilter();
+loadMenuData();
 
 syncMenuAvailability();
 // Reduced polling interval from 10s to 30s to prevent flickering
