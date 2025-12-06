@@ -14,7 +14,7 @@
     href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="{{ asset('styles.css') }}?v=3" />
+  <link rel="stylesheet" href="{{ asset('styles.css') }}?v=4" />
 </head>
 <body>
   <header class="af-header">
@@ -405,6 +405,6 @@
     </div>
   </footer>
 
-  <script src="{{ asset('script.js') }}?v=3"></script>
+  <script src="{{ asset('script.js') }}?v=4"></script>
 </body>
 </html>

@@ -712,11 +712,8 @@ bindAddToCartButtons();
 bindFilterButtons();
 applyFilter();
 
-// Hydrate from the API only if the server didn't render full data (prevents flicker)
-const needsHydration = !hasSSRMenuItems || !hasSSRFeatured || !hasSSRFilters;
-if (needsHydration) {
-  loadMenuData();
-}
+// Hydrate from the API (merge-only; we never clear SSR content to avoid flicker)
+loadMenuData();
 
 syncMenuAvailability();
 // Reduced polling interval from 10s to 30s to prevent flickering
