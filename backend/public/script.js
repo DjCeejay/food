@@ -386,7 +386,7 @@ function renderMenu(items) {
       '<p style="grid-column:1/-1;text-align:center;">Menu is coming soon. Please check back.</p>';
     return;
   }
-
+if (!hasSSRMenuItems) {
   menuGrid.innerHTML = items
     .map((item) => {
       const catName = item.category?.name || "Menu";
@@ -430,7 +430,12 @@ function renderMenu(items) {
     .join("");
 
   bindAddToCartButtons();
-  applyFilter();
+  // applyFilter();
+} else {
+  // Only update sold-out state (no render)
+  items.forEach((item) => {
+    setSoldOutState(item.id, !!item.is_sold_out);
+  });
 }
 
 function applyFilter() {
@@ -472,11 +477,13 @@ async function loadMenuData() {
 
     if (safeItems.length) {
       if (!hasSSRMenuItems) {
-        renderMenu(safeItems);
-      } else {
-        safeItems.forEach((item) => upsertMenuItem(item));
-        applyFilter();
-      }
+    renderMenu(safeItems);
+} else {
+    // Update sold-out status only; no full re-render
+    safeItems.forEach((item) => {
+        setSoldOutState(item.id, !!item.is_sold_out);
+    });
+}
 
       if (!hasSSRFeatured) {
         renderFeatured(safeItems);
@@ -717,7 +724,7 @@ loadMenuData();
 
 syncMenuAvailability();
 // Reduced polling interval from 10s to 30s to prevent flickering
-setInterval(syncMenuAvailability, 30000);
+// setInterval(syncMenuAvailability, 30000);
 
 // Attach checkout handlers for all buttons
 document.querySelectorAll("[data-paystack-btn]").forEach((btn) => {
