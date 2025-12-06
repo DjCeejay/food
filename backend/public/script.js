@@ -379,6 +379,11 @@ function renderFeatured(items) {
   bindAddToCartButtons();
 }
 
+const hasSSRMenuItems = !!(menuGrid && menuGrid.querySelector("[data-menu-item]"));
+const hasSSRFeatured = !!(featuredGrid && featuredGrid.querySelector("[data-menu-item]"));
+const hasSSRFilters = !!(menuFilters && menuFilters.querySelectorAll(".af-chip").length > 1);
+
+
 function renderMenu(items) {
   if (!menuGrid) return;
   if (!items.length) {
@@ -386,57 +391,58 @@ function renderMenu(items) {
       '<p style="grid-column:1/-1;text-align:center;">Menu is coming soon. Please check back.</p>';
     return;
   }
-if (!hasSSRMenuItems) {
-  menuGrid.innerHTML = items
-    .map((item) => {
-      const catName = item.category?.name || "Menu";
-      const catSlug = slugify(catName);
-      return `
-        <article
-          class="af-menu-item"
-          data-menu-item
-          data-item-id="${item.id}"
-          data-sold-out="${item.is_sold_out ? "1" : "0"}"
-          data-category="${catSlug}"
-        >
-          <div class="af-menu-head">
-            <h3>${item.name}</h3>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <span class="af-pill">${catName}</span>
-              <span
-                class="af-pill"
-                data-soldout-pill
-                style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;${item.is_sold_out ? "" : "display:none;"}"
-              >Sold Out</span>
+  
+  if (!hasSSRMenuItems) {
+    menuGrid.innerHTML = items
+      .map((item) => {
+        const catName = item.category?.name || "Menu";
+        const catSlug = slugify(catName);
+        return `
+          <article
+            class="af-menu-item"
+            data-menu-item
+            data-item-id="${item.id}"
+            data-sold-out="${item.is_sold_out ? "1" : "0"}"
+            data-category="${catSlug}"
+          >
+            <div class="af-menu-head">
+              <h3>${item.name}</h3>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span class="af-pill">${catName}</span>
+                <span
+                  class="af-pill"
+                  data-soldout-pill
+                  style="background:#fef2f2;color:#b91c1c;border-color:#fecdd3;${item.is_sold_out ? "" : "display:none;"}"
+                >Sold Out</span>
+              </div>
             </div>
-          </div>
-          <p>${item.description || "Freshly prepared from our kitchen."}</p>
-          <div class="af-menu-footer">
-            <span class="af-price">₦${Number(item.price).toLocaleString()}</span>
-            <button
-              class="af-btn af-btn-sm af-btn-outline"
-              data-item="${item.name}"
-              data-item-id="${item.id}"
-              data-item-price="${item.price}"
-              data-sold-out="${item.is_sold_out ? "1" : "0"}"
-              ${item.is_sold_out ? "disabled" : ""}
-            >
-              ${item.is_sold_out ? "Sold Out" : "Add to Cart"}
-            </button>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+            <p>${item.description || "Freshly prepared from our kitchen."}</p>
+            <div class="af-menu-footer">
+              <span class="af-price">₦${Number(item.price).toLocaleString()}</span>
+              <button
+                class="af-btn af-btn-sm af-btn-outline"
+                data-item="${item.name}"
+                data-item-id="${item.id}"
+                data-item-price="${item.price}"
+                data-sold-out="${item.is_sold_out ? "1" : "0"}"
+                ${item.is_sold_out ? "disabled" : ""}
+              >
+                ${item.is_sold_out ? "Sold Out" : "Add to Cart"}
+              </button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
 
-  bindAddToCartButtons();
-  // applyFilter();
-} else {
-  // Only update sold-out state (no render)
-  items.forEach((item) => {
-    setSoldOutState(item.id, !!item.is_sold_out);
-  });
-}
+    bindAddToCartButtons();
+    applyFilter(); // Now this function exists!
+  } else {
+    // Only update sold-out state (no render)
+    items.forEach((item) => {
+      setSoldOutState(item.id, !!item.is_sold_out);
+    });
+  }
 }
 
 function applyFilter() {
