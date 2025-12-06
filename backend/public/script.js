@@ -691,11 +691,23 @@ function handleWhatsApp(form) {
   window.open(url, "_blank");
 }
 
-// Kick off bindings and load menu data
-bindFilterButtons();
-applyFilter();
-bindAddToCartButtons();
-loadMenuData();
+// Kick off bindings and load menu data (avoid double-render if server already rendered content)
+const hasSSRContent = !!(
+  (menuGrid && menuGrid.querySelector('[data-menu-item]')) ||
+  (featuredGrid && featuredGrid.querySelector('[data-menu-item]')) ||
+  (menuFilters && menuFilters.children.length > 0)
+);
+
+if (hasSSRContent) {
+  // Server-rendered content present: just bind handlers and apply filter
+  bindAddToCartButtons();
+  bindFilterButtons();
+  applyFilter();
+} else {
+  // No server-rendered content: fetch and render dynamically
+  loadMenuData();
+}
+
 syncMenuAvailability();
 // Reduced polling interval from 10s to 30s to prevent flickering
 setInterval(syncMenuAvailability, 30000);

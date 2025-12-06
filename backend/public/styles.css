@@ -107,9 +107,13 @@ a {
   position: sticky;
   top: 0;
   z-index: 50;
-  backdrop-filter: blur(16px);
-  background: rgba(255, 255, 255, 0.92);
+  /* Removed backdrop-filter to prevent flicker on some browsers */
+  /* backdrop-filter: blur(16px); */
+  background: rgba(255, 255, 255, 0.98);
   border-bottom: 1px solid var(--af-line);
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .af-header-inner {
