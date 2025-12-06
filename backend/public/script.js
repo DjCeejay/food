@@ -707,11 +707,16 @@ const hasSSRMenuItems = !!(menuGrid && menuGrid.querySelector("[data-menu-item]"
 const hasSSRFeatured = !!(featuredGrid && featuredGrid.querySelector("[data-menu-item]"));
 const hasSSRFilters = !!(menuFilters && menuFilters.querySelectorAll(".af-chip").length > 1);
 
-// Bind whatever the server already rendered for instant UX, then hydrate quietly from the API
+// Bind whatever the server already rendered for instant UX
 bindAddToCartButtons();
 bindFilterButtons();
 applyFilter();
-loadMenuData();
+
+// Hydrate from the API only if the server didn't render full data (prevents flicker)
+const needsHydration = !hasSSRMenuItems || !hasSSRFeatured || !hasSSRFilters;
+if (needsHydration) {
+  loadMenuData();
+}
 
 syncMenuAvailability();
 // Reduced polling interval from 10s to 30s to prevent flickering
